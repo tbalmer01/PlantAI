@@ -1,0 +1,30 @@
+# 👇 Evita subir la configuración del proyecto CLASP
+.clasp.json
+
+# 👇 Output de compilación si usás TypeScript con rootDir/dist/outDir
+dist/
+out/
+build/
+
+# 👇 Archivos típicos de configuración del sistema/editor
+.DS_Store
+.idea/
+.vscode/
+
+# 👇 Node.js y dependencias locales (si usás npm para testear o compilar)
+node_modules/
+package-lock.json
+yarn.lock
+
+# 👇 Archivos temporales
+*.log
+*.tmp
+
+# 👇 Archivos de configuración personal
+.env
+.env.local
+.env.*.local
+
+# 👇 Caché y config de herramientas
+.nyc_output/
+coverage/

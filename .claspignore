@@ -1,0 +1,8 @@
+# Ignorar la carpeta node_modules
+node_modules/**
+
+# Ignorar archivos innecesarios
+.git/**
+.claspignore
+package-lock.json
+*.log
