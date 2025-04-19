@@ -28,3 +28,6 @@ yarn.lock
 # 👇 Caché y config de herramientas
 .nyc_output/
 coverage/
+
+# Archivos de configuración JS
+env.js
