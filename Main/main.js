@@ -16,29 +16,35 @@ function main() {
   Logger.log(`🟢 Running main flow`);
 
   const currentDate = new Date();
+  Logger.log(`🟢 Current date: ${currentDate}`);
   const hour = currentDate.getHours();
-  Logger.log(`🟢 Getting current hour: ${hour}`);
+  Logger.log(`🟢 Current hour: ${hour}`);
 
   Logger.log("🟢 Getting IOT devices information from SinricPro API");
   const devices = SinricProService.getSinricDevices() || [];
+  Logger.log(`🟢 Response from SinricPro API - devices: ${devices}`);
 
   Logger.log("🟢 Logging devices information to Sheets");
   SpreadsheetService.logDevicesData(currentDate, devices);
    
   Logger.log("🟢 Obtaining the Product requirement data");
   const prdReference = DriveService.getProductRequirementDocument();
+  Logger.log(`🟢 Product requirement data: ${prdReference}`);
 
   Logger.log(`🟢 Getting for new image to analyze`);
   const image = Interactor.searchForNewImage();
+  Logger.log(`🟢 Image found: ${image}`);
   if (image) {
     Logger.log(`🟢 Getting the image and its Vision API analysis`);
-    const visionResponse = Interactor.analyzeImageFlowWithVision();
+    const visionResponse = Interactor.analyzeImageFlowWithVision(image);
+    Logger.log(`🟢 Logging the image and its Vision API analysis`);
     SpreadsheetService.logVisionResponseImageAnalysis(visionResponse.sheetRow);
 
     Logger.log("🟢 Sending data to Gemini API");
     const geminiResponse = GeminiService.generatePlantAnalysis(visionResponse, devices, 
       prdReference);
-  
+    Logger.log(`🟢 Gemini response: ${geminiResponse}`);
+
     // TODO: Revisar this!!!
     // Logger.log("🟢 Logging image analysis to Sheets"); 
     // SpreadsheetService.logImageAnalysis(currentDate, visionResponse, geminiResponse);
@@ -49,6 +55,7 @@ function main() {
     Logger.log("🟢 No new image analyzed");
   }
 
+  Logger.log("🟢 Controlling devices based on schedule");
   Interactor.controlDevicesBasedOnSchedule(hour);
     
   Logger.log(`🟢 Enhanced symbiotic analysis completed successfully`);
