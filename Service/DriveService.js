@@ -32,9 +32,9 @@ const DriveService = {
     }
 
     Logger.log(`📤 Getting the sheet and checking if this image has already been processed`);
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_DEVICES_AND_SENSORS);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_IMAGE_ANALYSIS);
     if (!sheet) {
-      Logger.log(`❌ Sheet Memory not found: ${SHEET_DEVICES_AND_SENSORS}`);
+      Logger.log(`❌ Sheet Memory not found: ${SHEET_IMAGE_ANALYSIS}`);
       return null;
     }
     
