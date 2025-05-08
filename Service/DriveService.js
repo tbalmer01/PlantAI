@@ -40,7 +40,8 @@ const DriveService = {
     
     Logger.log(`📤 Getting the last processed image name`);
     const lastProcessedFileName = SpreadsheetService.getLastProcessedImageName(sheet);
-    if (latestFile.getName() === lastProcessedFileName) {
+    const lastImageNameInDrive = latestFile.getName();
+    if (lastImageNameInDrive === lastProcessedFileName) {
       Logger.log(`⚠️ No new images to process.`);
       return null;
     }
@@ -128,12 +129,12 @@ const DriveService = {
       return null;
     }
 
-    Logger.log(`✅ Documento PRD encontrado: ${documentFile.getName()}`);
+    Logger.log(`📁 Documento PRD encontrado: ${documentFile.getName()}`);
 
     const doc = DocumentApp.openById(documentFile.getId());
     const text = doc.getBody().getText();
 
-    Logger.log(`📜 Primeros caracteres del contenido: ${text.substring(0, 200)}...`);
+    Logger.log(`📁 Primeros caracteres del contenido: ${text.substring(0, 100)}...`);
 
     return text;
   }

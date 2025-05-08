@@ -16,9 +16,8 @@ function main() {
   Logger.log(`🟢 Running main flow`);
 
   const currentDate = new Date();
-  Logger.log(`🟢 Current date: ${currentDate}`);
   const hour = currentDate.getHours();
-  Logger.log(`🟢 Current hour: ${hour}`);
+  Logger.log(`🟢 Current date: ${currentDate}`);
 
   Logger.log("🟢 Getting IOT devices information from SinricPro API");
   const devices = SinricProService.getSinricDevices() || [];
@@ -29,7 +28,6 @@ function main() {
    
   Logger.log("🟢 Obtaining the Product requirement data");
   const prdReference = DriveService.getProductRequirementDocument();
-  Logger.log(`🟢 Product requirement data: ${prdReference}`);
 
   Logger.log(`🟢 Getting for new image to analyze`);
   const image = Interactor.searchForNewImage();
@@ -41,7 +39,7 @@ function main() {
     SpreadsheetService.logVisionResponseImageAnalysis(visionResponse.sheetRow);
 
     Logger.log("🟢 Sending data to Gemini API");
-    const geminiResponse = GeminiService.generatePlantAnalysis(visionResponse, devices, 
+    const geminiResponse = GeminiService.generatePlantAnalysis(visionResponse.forGemini, devices, 
       prdReference);
     Logger.log(`🟢 Gemini response: ${geminiResponse}`);
 
