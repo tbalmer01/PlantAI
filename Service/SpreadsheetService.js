@@ -60,13 +60,13 @@ const SpreadsheetService = {
         Logger.log("🟡 SpreadsheetService: No data provided for Vision Log.");
         return;
     }
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(VISION_LOG_SHEET_NAME);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_IMAGE_ANALYSIS);
     if (!sheet) {
-      Logger.log(`🔴 SpreadsheetService: Sheet "${VISION_LOG_SHEET_NAME}" not found for Vision Log.`);
+      Logger.log(`🔴 SpreadsheetService: Sheet "${SHEET_IMAGE_ANALYSIS}" not found for Vision Log.`);
       return;
     }
     sheet.appendRow(visionLogSheetRowArray);
-    Logger.log(`📄 SpreadsheetService: Vision API analysis logged to ${VISION_LOG_SHEET_NAME}.`);
+    Logger.log(`📄 SpreadsheetService: Vision API analysis logged to ${SHEET_IMAGE_ANALYSIS}.`);
   },
 
   /**
