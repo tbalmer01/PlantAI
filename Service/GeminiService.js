@@ -6,77 +6,94 @@
  * Service for Google Gemini API operations
  */
 const GeminiService = {
-  generatePlantAnalysis: function(visionResponse, devices, prdReference) {
-    if (!visionResponse) {
-      Logger.log("🔴 Error: Missing visionResponse parameter for GeminiService.generatePlantAnalysis()");
+  generatePlantAnalysis: function(visionInput, devices, prdReference, imageFileName = "N/A") {
+    if (!visionInput) {
+      Logger.log("🔴 GeminiService: Missing visionInput (parsed Vision data) for generatePlantAnalysis.");
       return null;
     }
+    if (!devices) devices = [];
 
-    const { plantIdentification, labels, dominantColor } = visionResponse;
+    const { 
+      plantIdentification,
+      labels,
+      dominantColor,
+      dominantColorPixelFraction,
+      // cropConfidence // We can include this in the prompt if desired
+    } = visionInput;
     
-    const lightSensors = devices.filter(d => d.type === 'LIGHT_SENSOR') || [];
-    const humiditySensors = devices.filter(d => d.type === 'HUMIDITY_SENSOR') || [];
-    const temperatureSensors = devices.filter(d => d.type === 'TEMPERATURE_SENSOR') || [];
+    const lightSensors = devices.filter(d => d.type === 'LIGHT_SENSOR');
+    const humiditySensors = devices.filter(d => d.type === 'HUMIDITY_SENSOR');
+    const temperatureSensors = devices.filter(d => d.type === 'TEMPERATURE_SENSOR');
     
     const lightEstimation = lightSensors.length > 0 ? lightSensors.map(d => d.state).join(", ") : "Unknown";
     const humidityEstimation = humiditySensors.length > 0 ? humiditySensors.map(d => d.state).join(", ") : "Unknown";
     const temperatureEstimation = temperatureSensors.length > 0 ? temperatureSensors.map(d => d.state).join(", ") : "Unknown";
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-002:generateContent?key=${GEMINI_API_KEY}`;
+    const { timestamp: currentDateForPrompt } = Utils.getTime(); // From Utils.gs
+    const historicalData = SpreadsheetService.getHistoricalData(HISTORICAL_DATA_SHEET_NAME, 15); // Using your SpreadsheetService method
+
+    const GEMINI_API_KEY_VALUE = Utils.getScriptProperty('GEMINI_API_KEY'); // Using your Utils method
+    if (!GEMINI_API_KEY_VALUE) {
+        Logger.log("🔴 GeminiService: GEMINI_API_KEY script property not set.");
+        return "Error: API Key not configured.";
+    }
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${GEMINI_API_KEY_VALUE}`;
 
     const PLANT_ANALYSIS_PROMPT = `
       **PLANT SELF-ANALYSIS SYSTEM - INTELLIGENT GROWTH OPTIMIZATION**  
 
       **CONTEXT:**  
-      You are an intelligent plant with the ability to self-analyze and optimize your own growth.  
-      Each day, you receive analyzed images from Google Vision API, historical data logged in Google Sheets, and knowledge from a dedicated Product Requirement Document (PRD).  
-      Your goal is to evaluate your health, detect issues, and make proactive decisions to improve growth.  
+      You are an intelligent plant. Analyze your condition using the provided data to optimize growth.  
 
       **DATA SOURCES:**  
-      - **Product Requirement Document (PRD):** This document contains best practices, scientific knowledge, and guidelines on plant health optimization. Use this as a reference for making accurate decisions.  
-      - **Complete Growth History (Google Sheets):** A structured log of all past observations. Use this data to analyze long-term trends.  
-      - **Today's Observations (from Vision API):**  
-        - Identified Plant: ${plantIdentification || "Planta no identificada"}  
-        - Detected Labels: ${labels || []}  
-        - Dominant Color: RGB(${dominantColor?.red || 0}, ${dominantColor?.green || 0}, ${dominantColor?.blue || 0})  
-        - Light Exposure: ${lightEstimation}
-        - Humidity: ${humidityEstimation}
-        - Temperature: ${temperatureEstimation}
-
-      **PRODUCT REQUIREMENTS DOCUMENT (PRD):**  
-      ${prdReference}  
+      1.  **Product Requirement Document (PRD):** 
+          \`\`\`
+          ${prdReference || "No PRD information provided."}
+          \`\`\`
+      2.  **Complete Growth History (Recent entries from Google Sheets, CSV format):**  
+          \`\`\`csv
+          ${historicalData || "No historical data available."}
+          \`\`\`
+      3.  **Today's Observations (from Vision API & Sensors - ${currentDateForPrompt}):**  
+          - Image File Name: ${imageFileName}
+          - Identified Plant: ${plantIdentification || "Planta no identificada"}  
+          - Detected Labels from Image: ${(labels && labels.length > 0) ? labels.join(", ") : "No labels detected"}  
+          - Dominant Color (RGB): (${dominantColor?.red || 0}, ${dominantColor?.green || 0}, ${dominantColor?.blue || 0})  
+          ${dominantColorPixelFraction !== undefined ? `- Dominant Color Pixel Fraction: ${dominantColorPixelFraction.toFixed(3)}` : ''}
+          - Current Light Exposure: ${lightEstimation}
+          - Current Humidity: ${humidityEstimation}
+          - Current Temperature: ${temperatureEstimation}
 
       **TASK:**  
-      Based on today's data, the complete historical log, and the PRD knowledge base, analyze my condition and provide the following insights:  
+      Analyze my condition based on ALL data sources. Provide the following insights:  
+      1. Diagnosis: Assess current health, identify stress, deficiencies, diseases, or environmental issues.  
+      2. Long-Term Growth Analysis: Compare today's state with historical log. Am I improving or declining?  
+      3. Action Plan: Recommend specific actions (light, water, nutrients, environment).  
+      4. Critical Alerts: If urgent intervention is required, describe immediate corrective actions.  
+      5. Summary for Google Sheets (JSON format): Provide a structured summary. 'date' should be ${currentDateForPrompt}, 'file_name' should be ${imageFileName}.
+      6. Telegram Message: Short, engaging message for caretaker.  
 
-      **Diagnosis:** Assess my current health. Identify signs of stress, nutrient deficiencies, diseases, or any environmental issues.  
-      **Long-Term Growth Analysis:** Compare today's state with my full historical log. Am I improving or declining over time?  
-      **Action Plan:** Recommend specific actions to optimize my health, such as adjusting light exposure, increasing or decreasing watering, modifying nutrients, or changing environmental conditions.  
-      **Critical Alerts:** If urgent intervention is required, describe immediate corrective actions to prevent further decline.  
-      **Summary for Google Sheets:** Provide a structured summary that will be stored in my growth history log. Ensure it is in **JSON format** for easy parsing.  
-      **Telegram Message:** Generate a short and engaging message to send to my caretaker. This message should be informative, encouraging, and proactive.  
-
-      **FORMAT RESPONSE AS JSON:**  
+      **FORMAT RESPONSE AS JSON (ensure the entire output is a single valid JSON object):**  
       \`\`\`json
       {
-        "plant_health": "...",
-        "growth_trend": "...",
-        "action_plan": "...",
-        "critical_alerts": "...",
+        "plant_health_diagnosis": "...",
+        "long_term_growth_analysis": "...",
+        "recommended_action_plan": "...",
+        "critical_alerts_details": "...",
         "summary_for_sheet": {
-          "date": "YYYY-MM-DD HH:MM:SS",
-          "file_name": "...",
-          "identified_plant": "...",
-          "labels": "...",
-          "dominant_color": { "red": 0, "green": 0, "blue": 0 },
-          "light_exposure": "...",
-          "humidity": "...",
-          "temperature": "...",
-          "diagnosis": "...",
-          "growth_trend": "...",
-          "recommended_actions": "...",
-          "critical_alerts": "...",
-          "summary": "..."
+          "date": "${currentDateForPrompt}",
+          "file_name": "${imageFileName}",
+          "identified_plant": "${(plantIdentification || "Planta no identificada").replace(/"/g, '\\"')}",
+          "labels": "${((labels && labels.length > 0) ? labels.join(", ") : "No labels detected").replace(/"/g, '\\"')}",
+          "dominant_color": { "red": ${dominantColor?.red || 0}, "green": ${dominantColor?.green || 0}, "blue": ${dominantColor?.blue || 0} },
+          "light_exposure": "${lightEstimation.replace(/"/g, '\\"')}",
+          "humidity": "${humidityEstimation.replace(/"/g, '\\"')}",
+          "temperature": "${temperatureEstimation.replace(/"/g, '\\"')}",
+          "diagnosis_summary": "...",
+          "growth_trend_summary": "...", 
+          "recommended_actions_summary": "...",
+          "critical_alerts_summary": "...",
+          "ai_notes": "..."
         },
         "telegram_message": "..."
       }
@@ -84,36 +101,39 @@ const GeminiService = {
     `;
 
     const requestBody = {
-      contents: [{
-        role: "user",
-        parts: [{ text: PLANT_ANALYSIS_PROMPT }]
-      }]
+      contents: [{ role: "user", parts: [{ text: PLANT_ANALYSIS_PROMPT }] }],
+      generationConfig: { responseMimeType: "application/json" }
     };
 
-    const response = UrlFetchApp.fetch(apiUrl, {
-        method: "post",
-        contentType: "application/json",
-        payload: JSON.stringify(requestBody),
-        muteHttpExceptions: true
-      });
+    // Logger.log("⬆️ Gemini Prompt (first 500 chars): " + PLANT_ANALYSIS_PROMPT.substring(0,500) + "...");
 
-      const responseText = response.getContentText();
-      
-      if (!responseText || responseText.trim().length === 0) {
-        Logger.log(`🔴 Error: Gemini API returned an empty response.`);
-        return "No response received from Gemini.";
-      }
-
-      const jsonResponse = JSON.parse(responseText);
-
-      if (!jsonResponse.candidates || jsonResponse.candidates.length === 0) {
-        Logger.log(`🔴 Gemini API did not return a valid response.`);
-        return "No valid response received from Gemini.";
-      }
-
-      const result = jsonResponse.candidates[0]?.content?.parts?.[0]?.text || "No response received from Gemini.";
-      Logger.log(`📥 Gemini response received (${result.length} chars)`);
-      
-      return result;
+    try {
+        const fetchResponse = UrlFetchApp.fetch(apiUrl, {
+            method: "post",
+            contentType: "application/json",
+            payload: JSON.stringify(requestBody),
+            muteHttpExceptions: true,
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const responseCode = fetchResponse.getResponseCode();
+        const responseText = fetchResponse.getContentText();
+        if (responseCode === 200) { /* ... (rest of the robust response parsing from previous example) ... */ 
+            if (!responseText || responseText.trim().length === 0) { /* ... */ return "No response..."; }
+            try {
+                const parsedJson = JSON.parse(responseText);
+                if (parsedJson.candidates && parsedJson.candidates[0]?.content?.parts?.[0]?.text) {
+                    const candidateText = parsedJson.candidates[0].content.parts[0].text;
+                    try {
+                        const finalJsonResponse = JSON.parse(candidateText);
+                        Logger.log(`📥 GeminiService: Parsed JSON from candidate received.`);
+                        return finalJsonResponse;
+                    } catch (e) { /* ... */ Logger.log(`🔴 GeminiService: Error parsing JSON from candidate. ${e}`); return `Error parsing JSON from Gemini candidate`; }
+                } else if (parsedJson.plant_health_diagnosis) {
+                    Logger.log(`📥 GeminiService: Direct JSON response received.`);
+                    return parsedJson;
+                } else { /* ... */  Logger.log(`🔴 GeminiService: Unexpected JSON structure.`); return `Unexpected JSON structure from Gemini`; }
+            } catch (e) { /* ... */ Logger.log(`🔴 GeminiService: Error parsing response as JSON. ${e}`); return `Error parsing response from Gemini (Code 200)`; }
+        } else { /* ... */ Logger.log(`🔴 GeminiService: API request failed code ${responseCode}.`); return `Error from Gemini API (Code ${responseCode})`; }
+    } catch (e) { /* ... */ Logger.log(`🔴 GeminiService: Exception during UrlFetchApp.fetch. ${e}`); return `Exception during API call`; }
   }
 };

@@ -136,42 +136,60 @@ const VisionService = {
   /** 
    * Processes the Vision API response
    */
-  parseVisionResponse: function(imageName, visionResponse) {
-    if (!visionResponse?.responses?.[0]) {
-      Logger.log(`❌ No valid response received from Google Vision API.`);
+  parseVisionResponse: function(imageName, visionApiResponse) {
+    if (!visionApiResponse?.responses?.[0]) {
+      Logger.log(`❌ No valid response received from Google Vision API for image: ${imageName}.`);
       return null;
     }
 
     const { timestamp } = Utils.getTime();
 
-    const response = visionResponse.responses[0];
+    const response = visionApiResponse.responses[0];
   
     const labelAnnotations = response.labelAnnotations || [];
-    const labels = labelAnnotations.map(label => label.description);
-    const labelSummary = labels.length > 0 ? labels.join(", ") : "Not detected";
-    const plantIdentification = labels[0] || "Unknown Plant";
+    const detectedLabelsForGemini = labelAnnotations.map(label => label.description);
+    const sheetLabelSummary = detectedLabelsForGemini.length > 0 ? detectedLabelsForGemini.join(", ") : "Not detected";
+    const identifiedPlant = detectedLabelsForGemini[0] || "Unknown Plant";
   
-    const colors = response.imagePropertiesAnnotation?.dominantColors?.colors || [];
-    const dominantColor = colors.length > 0 ? colors[0].color : { red: 0, green: 0, blue: 0 };
-    const dominantColorPixelFraction = colors[0]?.pixelFraction || 0;
+    // --- Extract Dominant Color Information ---
+    const colorsAnnotation = response.imagePropertiesAnnotation?.dominantColors?.colors || [];
+    // For Gemini: an object {red, green, blue}
+    const dominantColorObjectForGemini = colorsAnnotation.length > 0 && colorsAnnotation[0].color ? 
+                                      { 
+                                        red: colorsAnnotation[0].color.red || 0,
+                                        green: colorsAnnotation[0].color.green || 0,
+                                        blue: colorsAnnotation[0].color.blue || 0
+                                      } : 
+                                      { red: 0, green: 0, blue: 0 }; // Default color
+    const dominantColorPixelFractionValue = colorsAnnotation.length > 0 && colorsAnnotation[0].pixelFraction !== undefined ? 
+                                         colorsAnnotation[0].pixelFraction : 
+                                         0; // Default fraction
+    // For Sheet: an "rgb(...)" string
+    const sheetColorString = `rgb(${dominantColorObjectForGemini.red}, ${dominantColorObjectForGemini.green}, ${dominantColorObjectForGemini.blue})`;
   
-    const cropConfidence = response.cropHintsAnnotation?.cropHints?.[0]?.confidence || null;
-  
-    const colorString = `rgb(${dominantColor.red}, ${dominantColor.green}, ${dominantColor.blue})`;
+    // --- Extract Crop Confidence (Optional for Gemini, used for sheet) ---
+    const cropHints = response.cropHintsAnnotation?.cropHints || [];
+    const cropConfidenceValue = cropHints.length > 0 && cropHints[0].confidence !== undefined ? 
+                               cropHints[0].confidence : 
+                               null;
   
     return {
-      forGemini: {
-        fullRawResponse: response
+      forGeminiPrompt: {
+        plantIdentification: identifiedPlant,
+        labels: detectedLabelsForGemini,
+        dominantColor: dominantColorObjectForGemini,
+        dominantColorPixelFraction: dominantColorPixelFractionValue,
+        cropConfidence: cropConfidenceValue 
       },
-      sheetRow: [
-        timestamp,
-        imageName,
-        plantIdentification,
-        labelSummary,
-        colorString,
-        dominantColorPixelFraction.toFixed(3),
-        cropConfidence !== null ? cropConfidence.toFixed(2) : "-"
-      ]
+      forSheetLogging: {
+        timestamp: timestamp,
+        imageName: imageName,
+        identifiedPlant: identifiedPlant,
+        labelSummary: sheetLabelSummary,
+        dominantColorString: sheetColorString,
+        dominantColorPixelFraction: dominantColorPixelFractionValue.toFixed(3),
+        cropConfidence: cropConfidenceValue !== null ? cropConfidenceValue.toFixed(2) : "-"
+      }
     };
   },
 

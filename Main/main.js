@@ -13,7 +13,7 @@
 // =================================================================================
 
 function main() {
-  Logger.log(`🟢 Running main flow`);
+  Logger.log(`🟢 SyAIPlan: Running main flow`);
 
   const currentDate = new Date();
   const hour = currentDate.getHours();
@@ -29,32 +29,60 @@ function main() {
   Logger.log("🟢 Obtaining the Product requirement data");
   const prdReference = DriveService.getProductRequirementDocument();
 
-  Logger.log(`🟢 Getting for new image to analyze`);
-  const image = Interactor.searchForNewImage();
-  Logger.log(`🟢 Image found: ${image}`);
-  if (image) {
-    Logger.log(`🟢 Getting the image and its Vision API analysis`);
-    const visionResponse = Interactor.analyzeImageFlowWithVision(image);
-    Logger.log(`🟢 Logging the image and its Vision API analysis`);
-    SpreadsheetService.logVisionResponseImageAnalysis(visionResponse.sheetRow);
+  Logger.log(`🟢 Searching for new image to analyze`);
+  const imageFile = Interactor.searchForNewImage();
 
-    Logger.log("🟢 Sending data to Gemini API");
-    const geminiResponse = GeminiService.generatePlantAnalysis(visionResponse.forGemini, devices, 
-      prdReference);
-    Logger.log(`🟢 Gemini response: ${geminiResponse}`);
+  if (imageFile) {
+    const imageName = imageFile.getName();
+    Logger.log(`🟢 Image found: ${imageName}`);
 
-    // TODO: Revisar this!!!
-    // Logger.log("🟢 Logging image analysis to Sheets"); 
-    // SpreadsheetService.logImageAnalysis(currentDate, visionResponse, geminiResponse);
+    Logger.log(`🟢 Analyzing image with Vision API: ${imageName}`);
+    const parsedVisionData = Interactor.analyzeImageFlowWithVision(imageFile); 
 
-    Logger.log("🟢 Sending Gemini response to Telegram");
-    TelegramService.sendMessage(geminiResponse);
+    if (parsedVisionData && parsedVisionData.forSheetLogging && parsedVisionData.forGeminiPrompt) {
+      Logger.log(`🟢 Logging Vision API analysis for ${imageName} to Sheets`);
+      
+      const visionLogSheetRow = SpreadsheetService._prepareVisionLogSheetRow(parsedVisionData.forSheetLogging);
+      if (visionLogSheetRow.length > 0) {
+          SpreadsheetService.logVisionResponseImageAnalysis(visionLogSheetRow);
+      }
+
+      Logger.log("🟢 Sending data to Gemini API for analysis");
+      const geminiAnalysisResult = GeminiService.generatePlantAnalysis(
+        parsedVisionData.forGeminiPrompt,
+        devices,
+        prdReference,
+        imageName
+      );
+      
+      if (geminiAnalysisResult && typeof geminiAnalysisResult === 'object') {
+        Logger.log(`🟢 Gemini analysis successful for ${imageName}.`);
+
+        if (geminiAnalysisResult.summary_for_sheet) {
+            Logger.log("🟢 Logging Gemini analysis summary to Sheets");
+            SpreadsheetService.logGeminiAnalysisSummary(geminiAnalysisResult.summary_for_sheet); 
+        }
+
+        if (geminiAnalysisResult.telegram_message) {
+            Logger.log("🟢 Sending Gemini analysis to Telegram");
+            TelegramService.sendMessage(geminiAnalysisResult.telegram_message);
+        } else {
+            Logger.log("⚠️ Gemini response did not contain a 'telegram_message'.");
+            TelegramService.sendMessage(`PlantAI: Analysis for ${imageName} complete. (No specific Telegram message from AI)`);
+        }
+      } else {
+        Logger.log(`🔴 Gemini analysis failed or returned unexpected format for ${imageName}. Response: ${geminiAnalysisResult}`);
+        TelegramService.sendMessage(`⚠️ PlantAI: Analysis for ${imageName} encountered an AI processing issue.`);
+      }
+    } else {
+      Logger.log(`🔴 Failed to parse Vision API data for image: ${imageName}`);
+    }
   } else {
-    Logger.log("🟢 No new image analyzed");
+    Logger.log("🟢 No new image found to analyze.");
   }
 
   Logger.log("🟢 Controlling devices based on schedule");
   Interactor.controlDevicesBasedOnSchedule(hour);
     
-  Logger.log(`🟢 Enhanced symbiotic analysis completed successfully`);
+  Logger.log(`🏁 Plant analysis cycle completed.`);
 }

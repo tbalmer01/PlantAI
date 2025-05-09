@@ -36,13 +36,41 @@ const SpreadsheetService = {
     }
   },
 
-
   /**
    * Logs image analysis data to the analysis sheet
    */
-  logVisionResponseImageAnalysis: function(rowData) {
-    if (!rowData) return null;
-    return this._logDataToSheet(SHEET_IMAGE_ANALYSIS, rowData);
+  _prepareVisionLogSheetRow: function(sheetDataForVisionLog) {
+    if (!sheetDataForVisionLog) {
+      Logger.log("🔴 SpreadsheetService: Cannot prepare vision log sheet row, input data is null.");
+      return [];
+    }
+    return [
+      sheetDataForVisionLog.timestamp || "", 
+      sheetDataForVisionLog.imageName || "",
+      sheetDataForVisionLog.identifiedPlant || "Unknown",
+      sheetDataForVisionLog.labelSummary || "No labels",
+      sheetDataForVisionLog.dominantColorString || "rgb(0,0,0)",
+      sheetDataForVisionLog.dominantColorPixelFraction || "0.000",
+      sheetDataForVisionLog.cropConfidence || "-"
+    ];
+  },
+
+  logVisionResponseImageAnalysis: function(visionLogSheetRowArray) { // Your existing function might take the array directly
+    if (!visionLogSheetRowArray || visionLogSheetRowArray.length === 0) {
+        Logger.log("🟡 SpreadsheetService: No data provided for Vision Log.");
+        return;
+    }
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(VISION_LOG_SHEET_NAME);
+      if (!sheet) {
+        Logger.log(`🔴 SpreadsheetService: Sheet "${VISION_LOG_SHEET_NAME}" not found for Vision Log.`);
+        return;
+      }
+      sheet.appendRow(visionLogSheetRowArray);
+      Logger.log(`📄 SpreadsheetService: Vision API analysis logged to ${VISION_LOG_SHEET_NAME}.`);
+    } catch (e) {
+      Logger.log(`🔴 SpreadsheetService: Error logging Vision API analysis: ${e.toString()}`);
+    }
   },
 
   /**
