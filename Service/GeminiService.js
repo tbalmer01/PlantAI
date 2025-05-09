@@ -6,7 +6,7 @@
  * Service for Google Gemini API operations
  */
 const GeminiService = {
-  generatePlantAnalysis: function(visionInput, devices, prdReference, imageFileName = "N/A") {
+  generatePlantAnalysis: function(visionInput, devices, prdReference, imageFileName) {
     if (!visionInput) {
       Logger.log("🔴 GeminiService: Missing visionInput (parsed Vision data) for generatePlantAnalysis.");
       return null;
@@ -30,7 +30,9 @@ const GeminiService = {
     const temperatureEstimation = temperatureSensors.length > 0 ? temperatureSensors.map(d => d.state).join(", ") : "Unknown";
 
     const { timestamp: currentDateForPrompt } = Utils.getTime(); // From Utils.gs
-    const historicalData = SpreadsheetService.getHistoricalData(HISTORICAL_DATA_SHEET_NAME, 15); // Using your SpreadsheetService method
+    
+    // TODO: Implement this
+    // const historicalData = SpreadsheetService.getHistoricalData(HISTORICAL_DATA_SHEET_NAME, 15); // Using your SpreadsheetService method
 
     const GEMINI_API_KEY_VALUE = Utils.getScriptProperty('GEMINI_API_KEY'); // Using your Utils method
     if (!GEMINI_API_KEY_VALUE) {
@@ -52,7 +54,6 @@ const GeminiService = {
           \`\`\`
       2.  **Complete Growth History (Recent entries from Google Sheets, CSV format):**  
           \`\`\`csv
-          ${historicalData || "No historical data available."}
           \`\`\`
       3.  **Today's Observations (from Vision API & Sensors - ${currentDateForPrompt}):**  
           - Image File Name: ${imageFileName}

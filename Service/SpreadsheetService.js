@@ -55,22 +55,18 @@ const SpreadsheetService = {
     ];
   },
 
-  logVisionResponseImageAnalysis: function(visionLogSheetRowArray) { // Your existing function might take the array directly
+  logVisionResponseImageAnalysis: function(visionLogSheetRowArray) {
     if (!visionLogSheetRowArray || visionLogSheetRowArray.length === 0) {
         Logger.log("🟡 SpreadsheetService: No data provided for Vision Log.");
         return;
     }
-    try {
-      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(VISION_LOG_SHEET_NAME);
-      if (!sheet) {
-        Logger.log(`🔴 SpreadsheetService: Sheet "${VISION_LOG_SHEET_NAME}" not found for Vision Log.`);
-        return;
-      }
-      sheet.appendRow(visionLogSheetRowArray);
-      Logger.log(`📄 SpreadsheetService: Vision API analysis logged to ${VISION_LOG_SHEET_NAME}.`);
-    } catch (e) {
-      Logger.log(`🔴 SpreadsheetService: Error logging Vision API analysis: ${e.toString()}`);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(VISION_LOG_SHEET_NAME);
+    if (!sheet) {
+      Logger.log(`🔴 SpreadsheetService: Sheet "${VISION_LOG_SHEET_NAME}" not found for Vision Log.`);
+      return;
     }
+    sheet.appendRow(visionLogSheetRowArray);
+    Logger.log(`📄 SpreadsheetService: Vision API analysis logged to ${VISION_LOG_SHEET_NAME}.`);
   },
 
   /**

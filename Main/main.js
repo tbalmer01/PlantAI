@@ -33,7 +33,7 @@ function main() {
   const imageFile = Interactor.searchForNewImage();
 
   if (imageFile) {
-    const imageName = imageFile.getName();
+    const imageName = imageFile.imageName;
     Logger.log(`🟢 Image found: ${imageName}`);
 
     Logger.log(`🟢 Analyzing image with Vision API: ${imageName}`);
