@@ -29,17 +29,7 @@ const GeminiService = {
     const humidityEstimation = humiditySensors.length > 0 ? humiditySensors.map(d => d.state).join(", ") : "Unknown";
     const temperatureEstimation = temperatureSensors.length > 0 ? temperatureSensors.map(d => d.state).join(", ") : "Unknown";
 
-    const { timestamp: currentDateForPrompt } = Utils.getTime(); // From Utils.gs
-    
-    // TODO: Implement this
-    // const historicalData = SpreadsheetService.getHistoricalData(HISTORICAL_DATA_SHEET_NAME, 15); // Using your SpreadsheetService method
-
-    const GEMINI_API_KEY_VALUE = Utils.getScriptProperty('GEMINI_API_KEY'); // Using your Utils method
-    if (!GEMINI_API_KEY_VALUE) {
-        Logger.log("🔴 GeminiService: GEMINI_API_KEY script property not set.");
-        return "Error: API Key not configured.";
-    }
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${GEMINI_API_KEY_VALUE}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-002:generateContent?key=${GEMINI_API_KEY}`;
 
     const PLANT_ANALYSIS_PROMPT = `
       **PLANT SELF-ANALYSIS SYSTEM - INTELLIGENT GROWTH OPTIMIZATION**  
