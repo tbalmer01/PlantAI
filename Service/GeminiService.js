@@ -6,7 +6,7 @@
  * Service for Google Gemini API operations
  */
 const GeminiService = {
-  generatePlantAnalysis: function(visionInput, devices, prdReference, imageFileName) {
+  generatePlantAnalysis: function(currentDate, visionInput, devices, prdReference, imageFileName) {
     if (!visionInput) {
       Logger.log("🔴 GeminiService: Missing visionInput (parsed Vision data) for generatePlantAnalysis.");
       return null;
@@ -45,7 +45,7 @@ const GeminiService = {
       2.  **Complete Growth History (Recent entries from Google Sheets, CSV format):**  
           \`\`\`csv
           \`\`\`
-      3.  **Today's Observations (from Vision API & Sensors - ${currentDateForPrompt}):**  
+      3.  **Today's Observations (from Vision API & Sensors - ${currentDate}):**  
           - Image File Name: ${imageFileName}
           - Identified Plant: ${plantIdentification || "Planta no identificada"}  
           - Detected Labels from Image: ${(labels && labels.length > 0) ? labels.join(", ") : "No labels detected"}  
@@ -61,7 +61,7 @@ const GeminiService = {
       2. Long-Term Growth Analysis: Compare today's state with historical log. Am I improving or declining?  
       3. Action Plan: Recommend specific actions (light, water, nutrients, environment).  
       4. Critical Alerts: If urgent intervention is required, describe immediate corrective actions.  
-      5. Summary for Google Sheets (JSON format): Provide a structured summary. 'date' should be ${currentDateForPrompt}, 'file_name' should be ${imageFileName}.
+      5. Summary for Google Sheets (JSON format): Provide a structured summary. 'date' should be ${currentDate}, 'file_name' should be ${imageFileName}.
       6. Telegram Message: Short, engaging message for caretaker.  
 
       **FORMAT RESPONSE AS JSON (ensure the entire output is a single valid JSON object):**  
@@ -72,7 +72,7 @@ const GeminiService = {
         "recommended_action_plan": "...",
         "critical_alerts_details": "...",
         "summary_for_sheet": {
-          "date": "${currentDateForPrompt}",
+          "date": "${currentDate}",
           "file_name": "${imageFileName}",
           "identified_plant": "${(plantIdentification || "Planta no identificada").replace(/"/g, '\\"')}",
           "labels": "${((labels && labels.length > 0) ? labels.join(", ") : "No labels detected").replace(/"/g, '\\"')}",

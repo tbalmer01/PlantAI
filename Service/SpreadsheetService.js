@@ -55,11 +55,13 @@ const SpreadsheetService = {
     ];
   },
 
-  logVisionResponseImageAnalysis: function(visionLogSheetRowArray) {
-    if (!visionLogSheetRowArray || visionLogSheetRowArray.length === 0) {
+  logVisionResponseImageAnalysis: function(sheetDataForVisionLog) {
+    const visionLogSheetRowArray = this._prepareVisionLogSheetRow(sheetDataForVisionLog);
+    if (visionLogSheetRowArray.length === 0) {
         Logger.log("🟡 SpreadsheetService: No data provided for Vision Log.");
         return;
     }
+  
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_IMAGE_ANALYSIS);
     if (!sheet) {
       Logger.log(`🔴 SpreadsheetService: Sheet "${SHEET_IMAGE_ANALYSIS}" not found for Vision Log.`);

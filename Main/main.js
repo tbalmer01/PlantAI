@@ -29,54 +29,39 @@ function main() {
   Logger.log("🟢 Obtaining the Product requirement data");
   const prdReference = DriveService.getProductRequirementDocument();
 
+  // Starting image detection flow ====================
   Logger.log(`🟢 Searching for new image to analyze`);
   const imageFile = Interactor.searchForNewImage();
-
   if (imageFile) {
     const imageName = imageFile.imageName;
     Logger.log(`🟢 Image found: ${imageName}`);
 
-    Logger.log(`🟢 Analyzing image with Vision API: ${imageName}`);
+    Logger.log(`🟢 Analyzing image with Vision Service and parsing the response`);
     const parsedVisionData = Interactor.analyzeImageFlowWithVision(imageFile); 
 
-    if (parsedVisionData && parsedVisionData.forSheetLogging && parsedVisionData.forGeminiPrompt) {
+    if (parsedVisionData) {
       Logger.log(`🟢 Logging Vision API analysis for ${imageName} to Sheets`);
+      SpreadsheetService.logVisionResponseImageAnalysis(parsedVisionData.forSheetLogging);
       
-      const visionLogSheetRow = SpreadsheetService._prepareVisionLogSheetRow(parsedVisionData.forSheetLogging);
-      if (visionLogSheetRow.length > 0) {
-          SpreadsheetService.logVisionResponseImageAnalysis(visionLogSheetRow);
-      }
-
       Logger.log("🟢 Sending data to Gemini API for analysis");
       const geminiAnalysisResult = GeminiService.generatePlantAnalysis(
+        currentDate,
         parsedVisionData.forGeminiPrompt,
         devices,
         prdReference,
         imageName
       );
       
-      if (geminiAnalysisResult && typeof geminiAnalysisResult === 'object') {
-        Logger.log(`🟢 Gemini analysis successful for ${imageName}.`);
-
-        if (geminiAnalysisResult.summary_for_sheet) {
-            Logger.log("🟢 Logging Gemini analysis summary to Sheets");
-            SpreadsheetService.logGeminiAnalysisSummary(geminiAnalysisResult.summary_for_sheet); 
-        }
-
-        if (geminiAnalysisResult.telegram_message) {
-            Logger.log("🟢 Sending Gemini analysis to Telegram");
-            TelegramService.sendMessage(geminiAnalysisResult.telegram_message);
-        } else {
-            Logger.log("⚠️ Gemini response did not contain a 'telegram_message'.");
-            TelegramService.sendMessage(`PlantAI: Analysis for ${imageName} complete. (No specific Telegram message from AI)`);
-        }
-      } else {
-        Logger.log(`🔴 Gemini analysis failed or returned unexpected format for ${imageName}. Response: ${geminiAnalysisResult}`);
-        TelegramService.sendMessage(`⚠️ PlantAI: Analysis for ${imageName} encountered an AI processing issue.`);
+      if (geminiAnalysisResult.summary_for_sheet) {
+          Logger.log("🟢 Logging Gemini analysis summary to Sheets");
+          SpreadsheetService.logGeminiAnalysisSummary(geminiAnalysisResult.summary_for_sheet); 
       }
-    } else {
-      Logger.log(`🔴 Failed to parse Vision API data for image: ${imageName}`);
-    }
+
+      if (geminiAnalysisResult.telegram_message) {
+          Logger.log("🟢 Sending Gemini analysis to Telegram");
+          TelegramService.sendMessage(geminiAnalysisResult.telegram_message);
+      } 
+    } 
   } else {
     Logger.log("🟢 No new image found to analyze.");
   }
