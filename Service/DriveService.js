@@ -25,7 +25,7 @@ const DriveService = {
     }
 
     Logger.log(`📤 Validating that the file is an image`);
-    const mimeType = latestFile.getMimeType();
+    let mimeType = latestFile.getMimeType();
     if (!mimeType.startsWith("image/")) {
       Logger.log(`❌ The file found is not an image, it's type: ${mimeType}`);
       return null;
@@ -42,7 +42,7 @@ const DriveService = {
     const lastProcessedFileName = SpreadsheetService.getLastProcessedImageName(sheet);
     const lastImageNameInDrive = latestFile.getName();
     if (lastImageNameInDrive === lastProcessedFileName) {
-      Logger.log(`⚠️ No new images to process.`);
+      Logger.log(`⚠️ No new images to process`);
       return null;
     }
       
@@ -54,6 +54,8 @@ const DriveService = {
     if (fileBlob.getBytes().length > maxSizeBytes) {
       Logger.log(`⚠️ Image is too large, converting to JPEG to reduce size.`);
       fileBlob = fileBlob.getAs("image/jpeg");
+      mimeType = "image/jpeg";
+      Logger.log(`📤 Image converted to JPEG`);
     }
 
     Logger.log(`📤 Validating that the file is not empty`);
@@ -63,14 +65,18 @@ const DriveService = {
     }
 
     Logger.log(`📤 Converting the image to Base64`);
-    const imageToAnalyze = Utilities.base64Encode(fileBlob.getBytes());
-    if (!imageToAnalyze || imageToAnalyze.length === 0) {
+    const imageBase64 = Utilities.base64Encode(fileBlob.getBytes());
+    if (!imageBase64 || imageBase64.length === 0) {
       Logger.log(`❌ The Base64 image is empty or was not generated correctly.`);
       return null;
     }
 
     Logger.log(`📤 Image processed successfully`);
-    return { imageName: latestFile.getName(), imageToAnalyze };
+    return {
+      imageName: latestFile.getName(),
+      imageBase64,
+      mimeType
+    };
   },
 
   /**

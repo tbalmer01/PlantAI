@@ -20,8 +20,10 @@ const Interactor = {
   /**
     * Execut the complete image analysis flow el flujo de análisis de imagen completo
   */
-  analyzeImageFlowWithVision: function(imageData) {
-    const { imageName = "No image name", imageToAnalyze } = imageData;
+
+  // Maybe we don't need this function anymore
+  /* analyzeImageFlowWithVision: function(imageData) {
+    const { imageName, imageBase64 } = imageData;
         
     Logger.log(`📤 Triggering VisionService.analyzeImageAndParseResponse`);
     const visionResponse = VisionService.analyzeImageAndParseResponse(imageName, imageToAnalyze);
@@ -29,7 +31,7 @@ const Interactor = {
         
     Logger.log(`📤 Image analysis flow completed successfully`);
     return visionResponse;
-  },
+  }, */
 
     /**
      * Controls the devices based on the scheduled time

@@ -33,35 +33,25 @@ function main() {
   Logger.log(`🟢 Searching for new image to analyze`);
   const imageFile = Interactor.searchForNewImage();
   if (imageFile) {
-    const imageName = imageFile.imageName;
-    Logger.log(`🟢 Image found: ${imageName}`);
+    Logger.log(`🟢 Image found: ${imageFile.imageName}`);
 
-    Logger.log(`🟢 Analyzing image with Vision Service and parsing the response`);
-    const parsedVisionData = Interactor.analyzeImageFlowWithVision(imageFile); 
-
-    if (parsedVisionData) {
-      Logger.log(`🟢 Logging Vision API analysis for ${imageName} to Sheets`);
-      SpreadsheetService.logVisionResponseImageAnalysis(parsedVisionData.forSheetLogging);
-      
-      Logger.log("🟢 Sending data to Gemini API for analysis");
-      const geminiAnalysisResult = GeminiService.generatePlantAnalysis(
-        currentDate,
-        parsedVisionData.forGeminiPrompt,
-        devices,
-        prdReference,
-        imageName
+    Logger.log("🟢 Sending data to Gemini API for analysis");
+    const geminiAnalysisResult = GeminiService.generatePlantAnalysis(
+      currentDate,
+      imageFile,
+      devices,
+      prdReference
       );
       
-      if (geminiAnalysisResult.summary_for_sheet) {
-          Logger.log("🟢 Logging Gemini analysis summary to Sheets");
-          SpreadsheetService.logGeminiAnalysisSummary(geminiAnalysisResult.summary_for_sheet); 
-      }
+    if (geminiAnalysisResult.summary_for_sheet) {
+      Logger.log("🟢 Logging Gemini analysis summary to Sheets");
+      SpreadsheetService.logGeminiAnalysisSummary(geminiAnalysisResult.summary_for_sheet); 
+    }
 
-      if (geminiAnalysisResult.telegram_message) {
-          Logger.log("🟢 Sending Gemini analysis to Telegram");
-          TelegramService.sendMessage(geminiAnalysisResult.telegram_message);
-      } 
-    } 
+    if (geminiAnalysisResult.telegram_message) {
+      Logger.log("🟢 Sending Gemini analysis to Telegram");
+      TelegramService.sendMessage(geminiAnalysisResult.telegram_message);
+    }  
   } else {
     Logger.log("🟢 No new image found to analyze.");
   }
