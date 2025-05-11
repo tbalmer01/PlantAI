@@ -85,7 +85,6 @@ const GeminiService = {
       .replace(/\{\{imageName\}\}/g, imageName)
       .replace(/\{\{currentDateISO\}\}/g, currentDate.toISOString())
       .replace(/\{\{currentDeviceStatusJSON\}\}/g, JSON.stringify(currentDeviceStatus))
-      .replace(/\{\{historicalContextSummary\}\}/g, historicalContextSummary);
 
     const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY_2');
     if (!apiKey) {
@@ -110,10 +109,8 @@ const GeminiService = {
         }
       ],
       "generationConfig": {
-        "temperature": 0.7, // Ajusta según la creatividad deseada
-        "maxOutputTokens": 4096, // Aumentado para el prompt más largo y la respuesta JSON detallada
-        // "topP": 0.9, // Podrías experimentar con topP y topK
-        // "topK": 40
+        "temperature": 0.7,
+        "maxOutputTokens": 4096,
       },
     };
 
@@ -134,35 +131,42 @@ const GeminiService = {
         const jsonResponse = JSON.parse(responseBody);
         const candidate = jsonResponse.candidates && jsonResponse.candidates[0];
         
-        // Verificación adicional de la estructura de la respuesta
         if (!candidate || !candidate.content || !candidate.content.parts || !candidate.content.parts[0] || !candidate.content.parts[0].text) {
             Logger.log(`Error: Unexpected Gemini response structure. Full response: ${responseBody}`);
-            // Verificar si hay un 'finishReason' que indique un bloqueo
             if (candidate && candidate.finishReason && candidate.finishReason !== "STOP") {
-                Logger.log(`Gemini finishReason: ${candidate.finishReason}. This might indicate content was blocked by safety settings or other reasons.`);
-                return { telegram_message: null, summary_for_sheet: null, error: `Gemini generation stopped due to: ${candidate.finishReason}. Check safety settings or prompt content.` };
+                Logger.log(`Gemini finishReason: ${candidate.finishReason}.`);
+                return { telegram_message: null, summary_for_sheet: null, error: `Gemini generation stopped due to: ${candidate.finishReason}.` };
             }
             return { telegram_message: null, summary_for_sheet: null, error: "Gemini response missing expected text content." };
         }
         const textPart = candidate.content.parts[0].text;
-        Logger.log(`Gemini Response Text (length: ${textPart.length}):\n${textPart.substring(0, 500)}...`); // Loguea solo una parte para no llenar logs
+        Logger.log(`Gemini Response Text (length: ${textPart.length}):\n${textPart.substring(0, 500)}...`);
 
-        // 6. PARSE RESPONSE
         const telegramMessage = this.extractSection(textPart, "PART 1: TELEGRAM_MESSAGE:");
-        const summaryJsonString = this.extractSection(textPart, "PART 2: SUMMARY_FOR_SHEET:");
-
+        // >>> Cleaning JSON <<<
+        let summaryJsonString = this.extractSection(textPart, "PART 2: SUMMARY_FOR_SHEET:");
         let summaryForSheet;
+
         if (summaryJsonString) {
+          if (summaryJsonString.startsWith("```json")) {
+            summaryJsonString = summaryJsonString.substring(7);
+          } else if (summaryJsonString.startsWith("```")) {
+            summaryJsonString = summaryJsonString.substring(3);
+          }
+          if (summaryJsonString.endsWith("```")) {
+            summaryJsonString = summaryJsonString.substring(0, summaryJsonString.length - 3);
+          }
+          summaryJsonString = summaryJsonString.trim();
           try {
             summaryForSheet = JSON.parse(summaryJsonString);
           } catch (e) {
-            Logger.log(`Error parsing SUMMARY_FOR_SHEET JSON: ${e.toString()}. Raw string segment: ${summaryJsonString.substring(0, 200)}...`);
+            Logger.log(`Error parsing SUMMARY_FOR_SHEET JSON: ${e.toString()}. Cleaned string segment: ${summaryJsonString.substring(0, 200)}...`);
             summaryForSheet = {
-              image_name: imageName, // Añadir info básica aunque falle el parseo
+              image_name: imageName,
               analysis_timestamp: currentDate.toISOString(),
-              raw_gemini_output_part2: summaryJsonString, // Guardar la parte que no se pudo parsear
+              raw_gemini_output_part2: summaryJsonString,
               parse_error: e.toString(),
-              full_gemini_response_on_error: textPart // Guardar todo por si acaso
+              original_full_response_on_error: textPart 
             };
           }
         } else {
@@ -171,7 +175,7 @@ const GeminiService = {
               image_name: imageName,
               analysis_timestamp: currentDate.toISOString(),
               error_extracting_summary: "PART 2: SUMMARY_FOR_SHEET not found or empty in response.",
-              full_gemini_response_on_error: textPart
+              original_full_response_on_error: textPart
             };
         }
 
@@ -193,18 +197,16 @@ const GeminiService = {
               errorMessage += `: ${errorJson.error.message}`;
           }
       } catch (e) {
-          errorMessage += `. Response: ${responseBody.substring(0, 500)}`; // Loguea parte del error no JSON
+          errorMessage += `. Response: ${responseBody.substring(0, 500)}`;
       }
       return { telegram_message: null, summary_for_sheet: null, error: errorMessage };
     }
   },
 
-  // extractSection debe ser parte del objeto GeminiService
   extractSection: function(text, startMarker) {
-    if (!text) return null; // Añadida verificación de texto nulo/undefined
+    if (!text) return null;
     const startIndex = text.indexOf(startMarker);
     if (startIndex === -1) return null;
-
     let content = text.substring(startIndex + startMarker.length).trim();
     const nextPartMatch = content.match(/\nPART \d+:/);
     if (nextPartMatch) {

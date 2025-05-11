@@ -42,16 +42,17 @@ function main() {
       devices,
       prdReference
       );
+
+    if (geminiAnalysisResult.telegram_message) {
+      Logger.log("🟢 Sending Gemini analysis to Telegram");
+      TelegramService.sendMessage(geminiAnalysisResult.telegram_message);
+    }  
       
     if (geminiAnalysisResult.summary_for_sheet) {
       Logger.log("🟢 Logging Gemini analysis summary to Sheets");
       SpreadsheetService.logGeminiAnalysisSummary(geminiAnalysisResult.summary_for_sheet); 
     }
 
-    if (geminiAnalysisResult.telegram_message) {
-      Logger.log("🟢 Sending Gemini analysis to Telegram");
-      TelegramService.sendMessage(geminiAnalysisResult.telegram_message);
-    }  
   } else {
     Logger.log("🟢 No new image found to analyze.");
   }
