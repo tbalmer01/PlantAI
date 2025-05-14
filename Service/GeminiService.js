@@ -148,9 +148,6 @@ const GeminiService = {
         let summaryForSheet;
 
         if (summaryJsonString) {
-          Logger.log(`Raw summary JSON string (first 100 chars): ${summaryJsonString.substring(0, 100)}...`);
-          
-          // Eliminar marcadores de código markdown si están presentes
           if (summaryJsonString.startsWith("```json")) {
             summaryJsonString = summaryJsonString.substring(7);
           } else if (summaryJsonString.startsWith("```")) {
@@ -160,9 +157,6 @@ const GeminiService = {
             summaryJsonString = summaryJsonString.substring(0, summaryJsonString.length - 3);
           }
           summaryJsonString = summaryJsonString.trim();
-          
-          // Log después de la limpieza
-          Logger.log(`Cleaned summary JSON string (first 100 chars): ${summaryJsonString.substring(0, 100)}...`);
           
           try {
             summaryForSheet = JSON.parse(summaryJsonString);
