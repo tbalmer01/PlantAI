@@ -6,12 +6,12 @@
  * Service for Google Gemini API operations
  */
 const GeminiService = {
-  generatePlantAnalysis: function(currentDate, imageFile, currentDeviceStatus) {
+  plantAnalysisByImage: function(currentDate, imageFile, currentDeviceStatus) {
     const { imageName, imageBase64: base64ImageData, mimeType } = imageFile;
     
     if (!imageName || !base64ImageData || !mimeType) {
       Logger.log(`Error: Missing critical image details for Gemini. Name: ${imageName}, HasBase64: ${!!base64ImageData}, MimeType: ${mimeType}`);
-      return { telegram_message: null, summary_for_sheet: null, error: `Failed to process image: Incomplete image details provided.` };
+      return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: `Failed to process image: Incomplete image details provided.` };
     }
 
     let basePromptTemplate = `SYSTEM INSTRUCTION (Meta-prompt for Gemini):
@@ -89,7 +89,7 @@ const GeminiService = {
     const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY_2');
     if (!apiKey) {
         Logger.log("Error: GEMINI_API_KEY not found in Script Properties.");
-        return { telegram_message: null, summary_for_sheet: null, error: "API key not configured." };
+        return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: "API key not configured." };
     }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_NAME}:generateContent?key=${apiKey}`;
@@ -135,9 +135,9 @@ const GeminiService = {
             Logger.log(`Error: Unexpected Gemini response structure. Full response: ${responseBody}`);
             if (candidate && candidate.finishReason && candidate.finishReason !== "STOP") {
                 Logger.log(`Gemini finishReason: ${candidate.finishReason}.`);
-                return { telegram_message: null, summary_for_sheet: null, error: `Gemini generation stopped due to: ${candidate.finishReason}.` };
+                return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: `Gemini generation stopped due to: ${candidate.finishReason}.` };
             }
-            return { telegram_message: null, summary_for_sheet: null, error: "Gemini response missing expected text content." };
+            return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: "Gemini response missing expected text content." };
         }
         const textPart = candidate.content.parts[0].text;
         Logger.log(`Gemini Response Text (length: ${textPart.length}):\n${textPart.substring(0, 500)}...`);
@@ -180,13 +180,13 @@ const GeminiService = {
         }
 
         return {
-          telegram_message: telegramMessage,
-          summary_for_sheet: summaryForSheet
+          message_by_image_analysis: telegramMessage,
+          summary_for_sheet_by_image_analysis: summaryForSheet
         };
 
       } catch (e) {
         Logger.log(`Error parsing Gemini JSON response object: ${e.toString()}. Response body: ${responseBody}`);
-        return { telegram_message: null, summary_for_sheet: null, error: `Error parsing Gemini outer response structure: ${e.toString()}` };
+        return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: `Error parsing Gemini outer response structure: ${e.toString()}` };
       }
     } else {
       Logger.log(`Error calling Gemini API. Status: ${responseCode}. Body: ${responseBody}`);
@@ -199,7 +199,7 @@ const GeminiService = {
       } catch (e) {
           errorMessage += `. Response: ${responseBody.substring(0, 500)}`;
       }
-      return { telegram_message: null, summary_for_sheet: null, error: errorMessage };
+      return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: errorMessage };
     }
   },
 
