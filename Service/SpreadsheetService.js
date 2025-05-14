@@ -122,25 +122,23 @@ const SpreadsheetService = {
       }
     }
     
-    // Create row data array with all the fields from the summary
     const rowData = [
       timestamp,                               
       summary.image_name || "",                
       summary.model_used || "",                
       summary.gemini_visual_description || "", 
       summary.gemini_health_diagnosis || "",   
-      summary.potential_species_suggestion || "", // Species suggestion
-      summary.estimated_growth_notes || "",    // Growth   notes
-      summary.leaf_status_observed || "",      // Leaf status
-      summary.stem_condition_observed || "",   // Stem condition
-      summary.pest_disease_signs || "",        // Pest/disease signs
-      summary.plant_persona_feeling || "",     // Plant feeling
-      summary.plant_persona_needs || "",       // Plant needs
-      summary.plant_persona_concerns || "",    // Plant concerns
-      summary.recommended_action_by_ai || "",  // Recommended action
-      summary.reasoning_for_action || "",      // Reasoning
-      summary.confidence_level_diagnosis || "", // Diagnosis confidence
-      summary.confidence_level_recommendation || "" // Recommendation confidence
+      summary.estimated_growth_notes || "",
+      summary.leaf_status_observed || "",      
+      summary.stem_condition_observed || "",   
+      summary.pest_disease_signs || "",        
+      summary.plant_persona_feeling || "",     
+      summary.plant_persona_needs || "",       
+      summary.plant_persona_concerns || "",    
+      summary.recommended_action_by_ai || "",  
+      summary.reasoning_for_action || "",      
+      summary.confidence_level_diagnosis || "", 
+      summary.confidence_level_recommendation || ""
     ];
     
     Logger.log(`📊 Logging Gemini analysis for image: ${summary.image_name}`);
