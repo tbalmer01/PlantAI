@@ -36,24 +36,6 @@ const SpreadsheetService = {
     }
   },
 
-  /**
-   * Logs image analysis data to the analysis sheet
-   */
-  _prepareVisionLogSheetRow: function(sheetDataForVisionLog) {
-    if (!sheetDataForVisionLog) {
-      Logger.log("🔴 SpreadsheetService: Cannot prepare vision log sheet row, input data is null.");
-      return [];
-    }
-    return [
-      sheetDataForVisionLog.timestamp || "", 
-      sheetDataForVisionLog.imageName || "",
-      sheetDataForVisionLog.identifiedPlant || "Unknown",
-      sheetDataForVisionLog.labelSummary || "No labels",
-      sheetDataForVisionLog.dominantColorString || "rgb(0,0,0)",
-      sheetDataForVisionLog.dominantColorPixelFraction || "0.000",
-      sheetDataForVisionLog.cropConfidence || "-"
-    ];
-  },
 
   logVisionResponseImageAnalysis: function(sheetDataForVisionLog) {
     const visionLogSheetRowArray = this._prepareVisionLogSheetRow(sheetDataForVisionLog);
@@ -136,5 +118,45 @@ const SpreadsheetService = {
     ];
     
     return this._logDataToSheet(SHEET_DEVICES_AND_SENSORS, rowData);
-  }
+  },
+
+  // =================================================================================
+  // Code deprecated: Not used anymore. Delete when sure.
+  // =================================================================================
+
+  /**
+   * Logs image analysis data to the analysis sheet
+   */
+    _prepareVisionLogSheetRow: function(sheetDataForVisionLog) {
+      if (!sheetDataForVisionLog) {
+        Logger.log("🔴 SpreadsheetService: Cannot prepare vision log sheet row, input data is null.");
+        return [];
+      }
+      return [
+        sheetDataForVisionLog.timestamp || "", 
+        sheetDataForVisionLog.imageName || "",
+        sheetDataForVisionLog.identifiedPlant || "Unknown",
+        sheetDataForVisionLog.labelSummary || "No labels",
+        sheetDataForVisionLog.dominantColorString || "rgb(0,0,0)",
+        sheetDataForVisionLog.dominantColorPixelFraction || "0.000",
+        sheetDataForVisionLog.cropConfidence || "-"
+      ];
+    },
+
+    logVisionResponseImageAnalysis: function(sheetDataForVisionLog) {
+      const visionLogSheetRowArray = this._prepareVisionLogSheetRow(sheetDataForVisionLog);
+      if (visionLogSheetRowArray.length === 0) {
+          Logger.log("🟡 SpreadsheetService: No data provided for Vision Log.");
+          return;
+      }
+    
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_IMAGE_ANALYSIS);
+      if (!sheet) {
+        Logger.log(`🔴 SpreadsheetService: Sheet "${SHEET_IMAGE_ANALYSIS}" not found for Vision Log.`);
+        return;
+      }
+      sheet.appendRow(visionLogSheetRowArray);
+      Logger.log(`📄 SpreadsheetService: Vision API analysis logged to ${SHEET_IMAGE_ANALYSIS}.`);
+    }
 };
+
