@@ -25,7 +25,7 @@ function main() {
   Logger.log(`🟢 Response from SinricPro API - devices: ${devices}`);
 
   Logger.log("🟢 Logging devices information to Sheets");
-  SpreadsheetService.logDevicesData(currentDate, devices);
+  SpreadsheetService.logDevicesDataSummary(currentDate, devices);
   
   // PRD - read data ========================================================
   Logger.log("🟢 Obtaining the Product requirement data");
@@ -52,7 +52,7 @@ function main() {
       
     if (summary_for_sheet_by_image_analysis) {
       Logger.log("🟢 Logging Gemini analysis summary to Sheets");
-      SpreadsheetService.logGeminiAnalysisSummary(summary_for_sheet_by_image_analysis); 
+      SpreadsheetService.logImageAnalysisSummary(summary_for_sheet_by_image_analysis); 
     }
 
   } else {

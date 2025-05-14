@@ -36,27 +36,10 @@ const SpreadsheetService = {
     }
   },
 
-
-  logVisionResponseImageAnalysis: function(sheetDataForVisionLog) {
-    const visionLogSheetRowArray = this._prepareVisionLogSheetRow(sheetDataForVisionLog);
-    if (visionLogSheetRowArray.length === 0) {
-        Logger.log("🟡 SpreadsheetService: No data provided for Vision Log.");
-        return;
-    }
-  
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_IMAGE_ANALYSIS);
-    if (!sheet) {
-      Logger.log(`🔴 SpreadsheetService: Sheet "${SHEET_IMAGE_ANALYSIS}" not found for Vision Log.`);
-      return;
-    }
-    sheet.appendRow(visionLogSheetRowArray);
-    Logger.log(`📄 SpreadsheetService: Vision API analysis logged to ${SHEET_IMAGE_ANALYSIS}.`);
-  },
-
   /**
    * Logs devices data to the devices sheet
    */
-  logDevicesData: function (timestamp, devices) {  
+  logDevicesDataSummary: function (timestamp, devices) {  
     const hour = timestamp.getHours();
     const isWithinSchedule = hour >= 8 && hour <= 18;
 
@@ -120,14 +103,71 @@ const SpreadsheetService = {
     return this._logDataToSheet(SHEET_DEVICES_AND_SENSORS, rowData);
   },
 
+  /**
+   * Logs devices data to the devices sheet
+   */
+  logImageAnalysisSummary: function(summary) {
+    if (!summary) {
+      Logger.log("❌ Cannot log Gemini analysis: summary is null or undefined");
+      return false;
+    }
+    
+    // Format timestamp if it exists
+    let timestamp = summary.analysis_timestamp || new Date().toISOString();
+    if (typeof timestamp === 'string') {
+      try {
+        timestamp = new Date(timestamp);
+      } catch (e) {
+        Logger.log(`⚠️ Could not parse timestamp: ${timestamp}. Using as string.`);
+      }
+    }
+    
+    // Create row data array with all the fields from the summary
+    const rowData = [
+      timestamp,                               
+      summary.image_name || "",                
+      summary.model_used || "",                
+      summary.gemini_visual_description || "", 
+      summary.gemini_health_diagnosis || "",   
+      summary.potential_species_suggestion || "", // Species suggestion
+      summary.estimated_growth_notes || "",    // Growth   notes
+      summary.leaf_status_observed || "",      // Leaf status
+      summary.stem_condition_observed || "",   // Stem condition
+      summary.pest_disease_signs || "",        // Pest/disease signs
+      summary.plant_persona_feeling || "",     // Plant feeling
+      summary.plant_persona_needs || "",       // Plant needs
+      summary.plant_persona_concerns || "",    // Plant concerns
+      summary.recommended_action_by_ai || "",  // Recommended action
+      summary.reasoning_for_action || "",      // Reasoning
+      summary.confidence_level_diagnosis || "", // Diagnosis confidence
+      summary.confidence_level_recommendation || "" // Recommendation confidence
+    ];
+    
+    Logger.log(`📊 Logging Gemini analysis for image: ${summary.image_name}`);
+    return this._logDataToSheet(SHEET_IMAGE_ANALYSIS, rowData);
+  },
+
   // =================================================================================
   // Code deprecated: Not used anymore. Delete when sure.
   // =================================================================================
 
-  /**
-   * Logs image analysis data to the analysis sheet
-   */
-    _prepareVisionLogSheetRow: function(sheetDataForVisionLog) {
+  logVisionResponseImageAnalysis: function(sheetDataForVisionLog) {
+    const visionLogSheetRowArray = this._prepareVisionLogSheetRow(sheetDataForVisionLog);
+    if (visionLogSheetRowArray.length === 0) {
+        Logger.log("🟡 SpreadsheetService: No data provided for Vision Log.");
+        return;
+    }
+  
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_IMAGE_ANALYSIS);
+    if (!sheet) {
+      Logger.log(`🔴 SpreadsheetService: Sheet "${SHEET_IMAGE_ANALYSIS}" not found for Vision Log.`);
+      return;
+    }
+    sheet.appendRow(visionLogSheetRowArray);
+    Logger.log(`📄 SpreadsheetService: Vision API analysis logged to ${SHEET_IMAGE_ANALYSIS}.`);
+  },
+
+  _prepareVisionLogSheetRow: function(sheetDataForVisionLog) {
       if (!sheetDataForVisionLog) {
         Logger.log("🔴 SpreadsheetService: Cannot prepare vision log sheet row, input data is null.");
         return [];
@@ -141,9 +181,9 @@ const SpreadsheetService = {
         sheetDataForVisionLog.dominantColorPixelFraction || "0.000",
         sheetDataForVisionLog.cropConfidence || "-"
       ];
-    },
+  },
 
-    logVisionResponseImageAnalysis: function(sheetDataForVisionLog) {
+  logVisionResponseImageAnalysis: function(sheetDataForVisionLog) {
       const visionLogSheetRowArray = this._prepareVisionLogSheetRow(sheetDataForVisionLog);
       if (visionLogSheetRowArray.length === 0) {
           Logger.log("🟡 SpreadsheetService: No data provided for Vision Log.");
@@ -157,6 +197,6 @@ const SpreadsheetService = {
       }
       sheet.appendRow(visionLogSheetRowArray);
       Logger.log(`📄 SpreadsheetService: Vision API analysis logged to ${SHEET_IMAGE_ANALYSIS}.`);
-    }
+  }
 };
 
