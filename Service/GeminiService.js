@@ -24,6 +24,7 @@ const GeminiService = {
 
     IMAGE ANALYSIS:
     - Visually inspect the provided image of the plant named: {{imageName}}.
+    - Identified plant specie: Philodendron Lemon 'Lime'.
     - Describe key visual characteristics: overall plant structure, leaf color (note any variegation, yellowing, browning, spots), leaf shape and texture, stem condition, signs of new growth, and any visible pests, diseases, or damage.
     - Assess the plant's current health status based on visual cues.
     - If possible, suggest a potential species or type of plant if not already known, based on visual characteristics.
@@ -57,7 +58,6 @@ const GeminiService = {
       "model_used": "${GEMINI_MODEL_NAME}",
       "gemini_visual_description": "Detailed textual description of the plant's appearance in the image, covering leaves, stem, color, signs of health/stress, etc.",
       "gemini_health_diagnosis": "Comprehensive diagnosis of the plant's health (e.g., 'Healthy and thriving', 'Showing early signs of nutrient deficiency (nitrogen)', 'Moderate stress due to under-watering').",
-      "potential_species_suggestion": "If identifiable, suggest plant species/type, or 'Unknown'.",
       "estimated_growth_notes": "Observations on growth (e.g., 'New leaf unfurling', 'No significant growth observed since last image', 'Vigorous vertical growth').",
       "leaf_status_observed": "Specific visual state of leaves (e.g., 'Leaves are dark green and glossy, no visible spots or discoloration.', 'Lower leaves show slight yellowing with green veins.', 'Leaf tips appear brown and crispy.').",
       "stem_condition_observed": "Visual state of stems (e.g., 'Stems are firm and upright.', 'Some wilting observed in younger stems.').",
@@ -143,11 +143,14 @@ const GeminiService = {
         Logger.log(`Gemini Response Text (length: ${textPart.length}):\n${textPart.substring(0, 500)}...`);
 
         const telegramMessage = this.extractSection(textPart, "PART 1: TELEGRAM_MESSAGE:");
-        // >>> Cleaning JSON <<<
+        // >>> Cleaning JSON <
         let summaryJsonString = this.extractSection(textPart, "PART 2: SUMMARY_FOR_SHEET:");
         let summaryForSheet;
 
         if (summaryJsonString) {
+          Logger.log(`Raw summary JSON string (first 100 chars): ${summaryJsonString.substring(0, 100)}...`);
+          
+          // Eliminar marcadores de código markdown si están presentes
           if (summaryJsonString.startsWith("```json")) {
             summaryJsonString = summaryJsonString.substring(7);
           } else if (summaryJsonString.startsWith("```")) {
@@ -157,8 +160,13 @@ const GeminiService = {
             summaryJsonString = summaryJsonString.substring(0, summaryJsonString.length - 3);
           }
           summaryJsonString = summaryJsonString.trim();
+          
+          // Log después de la limpieza
+          Logger.log(`Cleaned summary JSON string (first 100 chars): ${summaryJsonString.substring(0, 100)}...`);
+          
           try {
             summaryForSheet = JSON.parse(summaryJsonString);
+            Logger.log(`Successfully parsed JSON summary.`);
           } catch (e) {
             Logger.log(`Error parsing SUMMARY_FOR_SHEET JSON: ${e.toString()}. Cleaned string segment: ${summaryJsonString.substring(0, 200)}...`);
             summaryForSheet = {
@@ -170,13 +178,21 @@ const GeminiService = {
             };
           }
         } else {
-            Logger.log(`Error: Could not extract SUMMARY_FOR_SHEET from Gemini's response.`);
-            summaryForSheet = {
-              image_name: imageName,
-              analysis_timestamp: currentDate.toISOString(),
-              error_extracting_summary: "PART 2: SUMMARY_FOR_SHEET not found or empty in response.",
-              original_full_response_on_error: textPart
-            };
+          Logger.log(`Error: Could not extract SUMMARY_FOR_SHEET from Gemini's response.`);
+          
+          Logger.log(`PART 2 marker exists: ${textPart.includes("PART 2: SUMMARY_FOR_SHEET")}`);
+          if (textPart.includes("PART 2: SUMMARY_FOR_SHEET")) {
+            const markerPos = textPart.indexOf("PART 2: SUMMARY_FOR_SHEET");
+            Logger.log(`PART 2 marker position: ${markerPos}`);
+            Logger.log(`Text after marker (50 chars): ${textPart.substring(markerPos + "PART 2: SUMMARY_FOR_SHEET".length, markerPos + "PART 2: SUMMARY_FOR_SHEET".length + 50)}`);
+          }
+          
+          summaryForSheet = {
+            image_name: imageName,
+            analysis_timestamp: currentDate.toISOString(),
+            error_extracting_summary: "PART 2: SUMMARY_FOR_SHEET not found or empty in response.",
+            original_full_response_on_error: textPart
+          };
         }
 
         return {
@@ -206,12 +222,20 @@ const GeminiService = {
   extractSection: function(text, startMarker) {
     if (!text) return null;
     const startIndex = text.indexOf(startMarker);
-    if (startIndex === -1) return null;
+    if (startIndex === -1) {
+      Logger.log(`Marker '${startMarker}' not found in text.`);
+      return null;
+    }
+    
     let content = text.substring(startIndex + startMarker.length).trim();
-    const nextPartMatch = content.match(/\nPART \d+:/);
+    
+    const nextPartMatch = content.match(/\s*PART \d+:/);
     if (nextPartMatch) {
       content = content.substring(0, nextPartMatch.index).trim();
     }
+    
+    Logger.log(`Extracted ${startMarker} content (first 50 chars): ${content.substring(0, 50)}...`);
+    
     return content;
   }
 };
