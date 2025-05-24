@@ -105,7 +105,7 @@ const Interactor = {
         }
       }
 
-      imageMetadata.sort((a, b) => a.dateCreated.getTime() - b.dateCreated.getTime());
+      imageMetadata.sort((a, b) => a.name.localeCompare(b.name));
 
       return imageMetadata;
     } catch (error) {
