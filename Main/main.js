@@ -15,9 +15,14 @@
 function main() {
   Logger.log(`🟢 SyAIPlan: Running main flow`);
 
+  // Get current date and hour ===============================================
   const currentDate = new Date();
   const hour = currentDate.getHours();
   Logger.log(`🟢 Current date: ${currentDate}`);
+
+  // IOT devices - Control based on schedule ===============================
+  Logger.log("🟢 Controlling devices based on schedule");
+  Interactor.controlDevicesBasedOnSchedule(hour);
 
   // IOT devices - read data ===============================================
   Logger.log("🟢 Getting IOT devices information from SinricPro API");
@@ -58,10 +63,6 @@ function main() {
   } else {
     Logger.log("🟢 No new image found to analyze.");
   }
-
-  // IOT devices - Control based on schedule ===============================
-  Logger.log("🟢 Controlling devices based on schedule");
-  Interactor.controlDevicesBasedOnSchedule(hour);
     
   Logger.log(`🏁 Plant analysis cycle completed.`);
 }

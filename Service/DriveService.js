@@ -3,84 +3,126 @@
 // =================================================================================
 
 /**
- * Service for Google Drive operations
+ * Service for Google Drive operations - Data Access Layer Only
  */
 const DriveService = {
   /**
-   * Gets the latest image from the configured Drive folder that hasn't been processed yet
+   * Get a specific image by name (called by Interactor)
    */
-  getImageToAnalyze: function() {
-    Logger.log(`📤 Triggering DriveService.getImageToAnalyze()`);
+  getSpecificImageToAnalyze: function(imageName) {
+    Logger.log(`📤 Getting specific image: ${imageName}`);
+
+    if (!imageName) {
+      Logger.log(`❌ No image name provided`);
+      return null;
+    }
 
     const MAX_SIZE_MB = 10;
 
-    Logger.log(`📤 Getting the Google Drive folder`);
-    const storageFolder = DriveApp.getFolderById(DRIVE_FOLDER_IMAGES_ID);
+    try {
+      const imageFile = this.findImageByName(imageName);
+      if (!imageFile) {
+        Logger.log(`❌ Image not found: ${imageName}`);
+        return null;
+      }
+
+      Logger.log(`📤 Found image: ${imageName}, processing...`);
       
-    Logger.log(`📤 Searching for the latest uploaded image`);
-    const latestFile = this.getLatestFileInFolder(storageFolder);
-    if (!latestFile) {
-      Logger.log(`⚠️ No images found in the storage folder`);
-      return null;
-    }
-
-    Logger.log(`📤 Validating that the file is an image`);
-    let mimeType = latestFile.getMimeType();
-    if (!mimeType.startsWith("image/")) {
-      Logger.log(`❌ The file found is not an image, it's type: ${mimeType}`);
-      return null;
-    }
-
-    Logger.log(`📤 Getting the sheet and checking if this image has already been processed`);
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_IMAGE_ANALYSIS);
-    if (!sheet) {
-      Logger.log(`❌ Sheet Memory not found: ${SHEET_IMAGE_ANALYSIS}`);
-      return null;
-    }
-    
-    Logger.log(`📤 Getting the last processed image name`);
-    const lastProcessedFileName = SpreadsheetService.getLastProcessedImageName(sheet);
-    const lastImageNameInDrive = latestFile.getName();
-    if (lastImageNameInDrive === lastProcessedFileName) {
-      Logger.log(`⚠️ No new images to process`);
-      return null;
-    }
+      let fileBlob = imageFile.getBlob();
+      let mimeType = imageFile.getMimeType();
       
-    Logger.log(`📤 Getting the image ${latestFile.getName()} and optimizing its size if needed`);
-    let fileBlob = latestFile.getBlob();
-      
-    Logger.log(`📤 Checking if the image is too large`);
-    const maxSizeBytes = MAX_SIZE_MB * 1024 * 1024;
-    if (fileBlob.getBytes().length > maxSizeBytes) {
-      Logger.log(`⚠️ Image is too large, converting to JPEG to reduce size.`);
-      fileBlob = fileBlob.getAs("image/jpeg");
-      mimeType = "image/jpeg";
-      Logger.log(`📤 Image converted to JPEG`);
-    }
+      const maxSizeBytes = MAX_SIZE_MB * 1024 * 1024;
+      if (fileBlob.getBytes().length > maxSizeBytes) {
+        Logger.log(`⚠️ Image is too large (${Math.round(fileBlob.getBytes().length / 1024 / 1024 * 100) / 100}MB), converting to JPEG`);
+        fileBlob = fileBlob.getAs("image/jpeg");
+        mimeType = "image/jpeg";
+        Logger.log(`📤 Image converted to JPEG`);
+      }
 
-    Logger.log(`📤 Validating that the file is not empty`);
-    if (fileBlob.getBytes().length === 0) {
-      Logger.log(`❌ The image is empty or corrupted.`);
+      if (fileBlob.getBytes().length === 0) {
+        Logger.log(`❌ The image is empty or corrupted: ${imageName}`);
+        return null;
+      }
+
+      const imageBase64 = Utilities.base64Encode(fileBlob.getBytes());
+      if (!imageBase64 || imageBase64.length === 0) {
+        Logger.log(`❌ Failed to convert image to Base64: ${imageName}`);
+        return null;
+      }
+
+      Logger.log(`✅ Image processed successfully: ${imageName}`);
+      return {
+        imageName: imageFile.getName(),
+        imageBase64,
+        mimeType
+      };
+
+    } catch (error) {
+      Logger.log(`❌ Error processing image ${imageName}: ${error.toString()}`);
       return null;
     }
-
-    Logger.log(`📤 Converting the image to Base64`);
-    const imageBase64 = Utilities.base64Encode(fileBlob.getBytes());
-    if (!imageBase64 || imageBase64.length === 0) {
-      Logger.log(`❌ The Base64 image is empty or was not generated correctly.`);
-      return null;
-    }
-
-    Logger.log(`📤 Image processed successfully`);
-    return {
-      imageName: latestFile.getName(),
-      imageBase64,
-      mimeType
-    };
   },
 
   /**
-   * Gets the latest file from a folder based on last updated date
+   * Find a specific image file by name in the storage folder
+   */
+  findImageByName: function(imageName) {
+    try {
+      const storageFolder = DriveApp.getFolderById(DRIVE_FOLDER_IMAGES_ID);
+      const files = storageFolder.getFiles();
+
+      while (files.hasNext()) {
+        const file = files.next();
+        const mimeType = file.getMimeType();
+        
+        if (mimeType.startsWith("image/") && file.getName() === imageName) {
+          return file;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      Logger.log(`❌ Error finding image ${imageName}: ${error.toString()}`);
+      return null;
+    }
+  },
+
+  /**
+   * Get all image files metadata from folder (used by Interactor for business logic)
+   */
+  getAllImagesMetadata: function() {
+    try {
+      const storageFolder = DriveApp.getFolderById(DRIVE_FOLDER_IMAGES_ID);
+      const files = storageFolder.getFiles();
+      const imageFiles = [];
+
+      while (files.hasNext()) {
+        const file = files.next();
+        const mimeType = file.getMimeType();
+        
+        if (mimeType.startsWith("image/")) {
+          imageFiles.push({
+            name: file.getName(),
+            dateCreated: file.getDateCreated(),
+            id: file.getId(),
+            size: file.getSize()
+          });
+        }
+      }
+
+      // Sort by creation date (oldest first)
+      imageFiles.sort((a, b) => a.dateCreated.getTime() - b.dateCreated.getTime());
+
+      Logger.log(`📤 Found ${imageFiles.length} images total, sorted chronologically`);
+      return imageFiles;
+    } catch (error) {
+      Logger.log(`❌ Error getting images metadata: ${error.toString()}`);
+      return [];
+    }
+  },
+
+  /**
+   * Get latest file (utility method)
    */
   getLatestFileInFolder: function(folder) {
     try {
@@ -111,37 +153,39 @@ const DriveService = {
   },
 
   /**
-   * Obtiene el contenido del Product Requirement Document (.gdoc) desde Drive.
-   * Busca por nombre dentro de la carpeta principal.
+   * Get PRD content from Drive
    */
   getProductRequirementDocument: function() {
-    const folder = DriveApp.getFolderById(DRIVE_FOLDER_MAIN_ID);
-    Logger.log(`📁 Buscando PRD en carpeta: ${folder.getName()}`);
+    try {
+      const folder = DriveApp.getFolderById(DRIVE_FOLDER_MAIN_ID);
+      Logger.log(`📁 Searching for PRD in folder: ${folder.getName()}`);
 
-    const filesIterator = folder.getFiles();
-    let documentFile = null;
+      const filesIterator = folder.getFiles();
+      let documentFile = null;
 
-    while (filesIterator.hasNext()) {
-      const file = filesIterator.next();
-      Logger.log(`📄 Archivo encontrado: ${file.getName()}`);
-      if (file.getName() === PRD_NAME) {
-        documentFile = file;
-        break;
+      while (filesIterator.hasNext()) {
+        const file = filesIterator.next();
+        if (file.getName() === PRD_NAME) {
+          documentFile = file;
+          break;
+        }
       }
-    }
 
-    if (!documentFile) {
-      Logger.log(`⚠️ No se encontró el documento con nombre: ${PRD_NAME}`);
+      if (!documentFile) {
+        Logger.log(`⚠️ PRD document not found: ${PRD_NAME}`);
+        return null;
+      }
+
+      Logger.log(`📁 PRD document found: ${documentFile.getName()}`);
+
+      const doc = DocumentApp.openById(documentFile.getId());
+      const text = doc.getBody().getText();
+
+      Logger.log(`📁 PRD content length: ${text.length} characters`);
+      return text;
+    } catch (error) {
+      Logger.log(`❌ Error getting PRD document: ${error.toString()}`);
       return null;
     }
-
-    Logger.log(`📁 Documento PRD encontrado: ${documentFile.getName()}`);
-
-    const doc = DocumentApp.openById(documentFile.getId());
-    const text = doc.getBody().getText();
-
-    Logger.log(`📁 Primeros caracteres del contenido: ${text.substring(0, 100)}...`);
-
-    return text;
   }
 };
