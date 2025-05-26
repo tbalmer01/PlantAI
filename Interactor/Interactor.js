@@ -115,8 +115,7 @@ const Interactor = {
   },
 
   /**
-   * NEW METHOD: Business logic to determine next image to process
-   * This is where you can implement different processing strategies
+   * Determine next image to process
    */
   determineNextImageToProcess: function(availableImages, processedImageNames) {
     try {
