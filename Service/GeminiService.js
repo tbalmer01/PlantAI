@@ -10,7 +10,8 @@ const GeminiService = {
     const { imageName, imageBase64: base64ImageData, mimeType } = imageFile;
     
     if (!imageName || !base64ImageData || !mimeType) {
-      Logger.log(`Error: Missing critical image details for Gemini. Name: ${imageName}, HasBase64: ${!!base64ImageData}, MimeType: ${mimeType}`);
+      Logger.log(`❌ Error: Missing critical image details for Gemini. Name: ${imageName}, HasBase64: ${!!base64ImageData}, MimeType: ${mimeType}`);
+      NotificationService.geminiMissingData(imageName);
       return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: `Failed to process image: Incomplete image details provided.` };
     }
 
@@ -88,7 +89,8 @@ const GeminiService = {
 
     const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY_2');
     if (!apiKey) {
-        Logger.log("Error: GEMINI_API_KEY not found in Script Properties.");
+        Logger.log(`❌ Error: GEMINI_API_KEY not found`);
+        NotificationService.geminiNoApiKey();
         return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: "API key not configured." };
     }
 
@@ -122,9 +124,11 @@ const GeminiService = {
     };
 
     Logger.log(`Sending request to Gemini API (${GEMINI_MODEL_NAME}) for image: ${imageName}. Prompt length: ${finalPrompt.length} chars.`);
-    const response = UrlFetchApp.fetch(url, options);
-    const responseCode = response.getResponseCode();
-    const responseBody = response.getContentText();
+    
+    try {
+      const response = UrlFetchApp.fetch(url, options);
+      const responseCode = response.getResponseCode();
+      const responseBody = response.getContentText();
 
     if (responseCode === 200) {
       try {
@@ -162,7 +166,8 @@ const GeminiService = {
             summaryForSheet = JSON.parse(summaryJsonString);
             Logger.log(`Successfully parsed JSON summary.`);
           } catch (e) {
-            Logger.log(`Error parsing SUMMARY_FOR_SHEET JSON: ${e.toString()}. Cleaned string segment: ${summaryJsonString.substring(0, 200)}...`);
+            Logger.log(`❌ Error parsing SUMMARY_FOR_SHEET JSON: ${e.toString()}. Cleaned string segment: ${summaryJsonString.substring(0, 200)}...`);
+            NotificationService.geminiSummaryExtractionError();
             summaryForSheet = {
               image_name: imageName,
               analysis_timestamp: currentDate.toISOString(),
@@ -172,7 +177,8 @@ const GeminiService = {
             };
           }
         } else {
-          Logger.log(`Error: Could not extract SUMMARY_FOR_SHEET from Gemini's response.`);
+          Logger.log(`❌ Error: Could not extract SUMMARY_FOR_SHEET from Gemini's response.`);
+          NotificationService.geminiSummaryExtractionError();
           
           Logger.log(`PART 2 marker exists: ${textPart.includes("PART 2: SUMMARY_FOR_SHEET")}`);
           if (textPart.includes("PART 2: SUMMARY_FOR_SHEET")) {
@@ -189,27 +195,39 @@ const GeminiService = {
           };
         }
 
-        return {
-          message_by_image_analysis: telegramMessage,
-          summary_for_sheet_by_image_analysis: summaryForSheet
-        };
+          return {
+            message_by_image_analysis: telegramMessage,
+            summary_for_sheet_by_image_analysis: summaryForSheet
+          };
 
-      } catch (e) {
-        Logger.log(`Error parsing Gemini JSON response object: ${e.toString()}. Response body: ${responseBody}`);
-        return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: `Error parsing Gemini outer response structure: ${e.toString()}` };
+        } catch (error) {
+          Logger.log(`❌ Error parsing Gemini outer response structure: ${error.toString()}. Response body: ${responseBody}`);
+          NotificationService.geminiJsonError(error.toString());
+          return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: `Error parsing Gemini outer response structure: ${error.toString()}` };
+        }
+      } else {
+        Logger.log(`❌ Error calling Gemini API. Status: ${responseCode}. Body: ${responseBody}`);
+        NotificationService.geminiApiFailed(responseCode);
+        
+        let detailedError = `Gemini API Error (${responseCode})`;
+        try {
+            const errorJson = JSON.parse(responseBody);
+            if (errorJson.error && errorJson.error.message) {
+                detailedError += `: ${errorJson.error.message}`;
+            }
+        } catch (error) {
+            detailedError += `. Response: ${responseBody.substring(0, 500)}`;
+        } 
+        NotificationService.geminiApiFailed(responseCode);
+        
+        return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: detailedError };
       }
-    } else {
-      Logger.log(`Error calling Gemini API. Status: ${responseCode}. Body: ${responseBody}`);
-      let errorMessage = `Gemini API Error (${responseCode})`;
-      try {
-          const errorJson = JSON.parse(responseBody);
-          if (errorJson.error && errorJson.error.message) {
-              errorMessage += `: ${errorJson.error.message}`;
-          }
-      } catch (e) {
-          errorMessage += `. Response: ${responseBody.substring(0, 500)}`;
-      }
-      return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: errorMessage };
+      
+    } catch (fetchError) {
+      Logger.log(`❌ Network error calling Gemini API: ${fetchError.toString()}`);
+      NotificationService.geminiNetworkError(fetchError.toString());
+      
+      return { message_by_image_analysis: null, summary_for_sheet_by_image_analysis: null, error: `Network error calling Gemini API: ${fetchError.toString()}` };
     }
   },
 

@@ -14,6 +14,7 @@ const DriveService = {
 
     if (!imageName) {
       Logger.log(`❌ No image name provided`);
+      NotificationService.imageNoName();
       return null;
     }
 
@@ -23,6 +24,7 @@ const DriveService = {
       const imageFile = this.findImageByName(imageName);
       if (!imageFile) {
         Logger.log(`❌ Image not found: ${imageName}`);
+        NotificationService.imageNotFound(imageName);
         return null;
       }
 
@@ -41,12 +43,14 @@ const DriveService = {
 
       if (fileBlob.getBytes().length === 0) {
         Logger.log(`❌ The image is empty or corrupted: ${imageName}`);
+        NotificationService.imageEmpty(imageName);
         return null;
       }
 
       const imageBase64 = Utilities.base64Encode(fileBlob.getBytes());
       if (!imageBase64 || imageBase64.length === 0) {
         Logger.log(`❌ Failed to convert image to Base64: ${imageName}`);
+        NotificationService.imageConversionFailed(imageName);
         return null;
       }
 
@@ -59,6 +63,7 @@ const DriveService = {
 
     } catch (error) {
       Logger.log(`❌ Error processing image ${imageName}: ${error.toString()}`);
+      NotificationService.imageProcessingError(imageName, error.message || error.toString());
       return null;
     }
   },
@@ -83,6 +88,7 @@ const DriveService = {
       return null;
     } catch (error) {
       Logger.log(`❌ Error finding image ${imageName}: ${error.toString()}`);
+      NotificationService.imageFindingError(imageName);
       return null;
     }
   },
@@ -108,10 +114,11 @@ const DriveService = {
 
       if (!documentFile) {
         Logger.log(`⚠️ PRD document not found: ${PRD_NAME}`);
+        NotificationService.prdNotFound(PRD_NAME);
         return null;
       }
 
-      Logger.log(`📁 PRD document found: ${documentFile.getName()}`);
+      Logger.log(`✅ PRD document found: ${documentFile.getName()}`);
 
       const doc = DocumentApp.openById(documentFile.getId());
       const text = doc.getBody().getText();
@@ -120,6 +127,7 @@ const DriveService = {
       return text;
     } catch (error) {
       Logger.log(`❌ Error getting PRD document: ${error.toString()}`);
+      NotificationService.prdErrorGetting(error.toString());
       return null;
     }
   }

@@ -16,14 +16,15 @@ const SinricProService = {
 
       const authCode = authResponse.getResponseCode();
       if (authCode !== 200) {
-        Logger.log(`❌ Error authenticating: ${authCode}`);
-        Logger.log(authResponse.getContentText());
+        Logger.log(`❌ Error authenticating: ${authResponse.getContentText()}`);
+        NotificationService.sinricAuthFailed(authCode);
         return [];
       }
 
       const { accessToken } = JSON.parse(authResponse.getContentText());
       if (!accessToken) {
         Logger.log(`❌ No accessToken received.`);
+        NotificationService.sinricNoToken();
         return [];
       }
 
@@ -38,14 +39,15 @@ const SinricProService = {
 
       const devicesCode = devicesResponse.getResponseCode();
       if (devicesCode !== 200) {
-        Logger.log(`⚠️ Error getting devices: ${devicesCode}`);
-        Logger.log(devicesResponse.getContentText());
+        Logger.log(`❌ Error getting devices: ${devicesResponse.getContentText()}`);
+        NotificationService.sinricDevicesFailed(devicesCode);
         return [];
       }
 
       const { devices } = JSON.parse(devicesResponse.getContentText());
       if (!devices || devices.length === 0) {
-        Logger.log(`⚠️ No devices found.`);
+        Logger.log(`❌ No devices found.`);
+        NotificationService.sinricNoDevices();
         return [];
       }
       
@@ -104,13 +106,15 @@ const SinricProService = {
       return formattedDevices;
     } catch (error) {
       Logger.log(`❌ Error general in getSinricDevices: ${error.message}`);
+      NotificationService.sinricError(error.message || error.toString());
       return [];
     }
   },
 
   setDevicePowerState: function(deviceId, state) {
     if (!deviceId) {
-      Logger.log(`❌ Dispositivo no encontrado: ${deviceId}`);
+      Logger.log(`❌ Device not found: ${deviceId}`);
+      NotificationService.sinricDeviceNotFound(deviceId);
       return;
     }
   
@@ -150,11 +154,12 @@ const SinricProService = {
       if (code === 200) {
         Logger.log(`✅ Dispositivo ${deviceId} => ${state}`);
       } else {
-        Logger.log(`⚠️ Error controlando dispositivo ${deviceId}. Código: ${code}`);
-        Logger.log(text);
+        Logger.log(`❌ Error controlling device ${deviceId}. Code: ${code}`);
+        NotificationService.sinricError(text);
       }
     } catch (err) {
-      Logger.log(`❌ Error al controlar el dispositivo ${deviceId}: ${err.message}`);
+      Logger.log(`❌ Error controlling device ${deviceId}: ${err.message}`);
+      NotificationService.sinricError(err.toString());
     }
   },
 

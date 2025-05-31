@@ -14,6 +14,7 @@ const Interactor = {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_IMAGE_ANALYSIS);
       if (!sheet) {
         Logger.log(`❌ Sheet not found: ${SHEET_IMAGE_ANALYSIS}`);
+        NotificationService.sheetNotFound(SHEET_IMAGE_ANALYSIS);
         return null;
       }
 
@@ -41,6 +42,7 @@ const Interactor = {
       const imageData = DriveService.getSpecificImageToAnalyze(nextImageName);
       if (!imageData) {
         Logger.log(`❌ Failed to get image data for: ${nextImageName}`);
+        NotificationService.imageDataFailed(nextImageName);
         return null;
       }
 
@@ -49,6 +51,7 @@ const Interactor = {
 
     } catch (error) {
       Logger.log(`❌ Error in searchForNewImage: ${error.toString()}`);
+      NotificationService.imageSearchFailed(error.toString());
       return null;
     }
   },
@@ -79,6 +82,7 @@ const Interactor = {
       return uniqueNames;
     } catch (error) {
       Logger.log(`❌ Error reading processed images from sheet: ${error.toString()}`);
+      NotificationService.imageSearchFailed(error.toString());
       return [];
     }
   },
@@ -110,6 +114,7 @@ const Interactor = {
       return imageMetadata;
     } catch (error) {
       Logger.log(`❌ Error getting available images metadata: ${error.toString()}`);
+      NotificationService.imageSearchFailed(error.toString());
       return [];
     }
   },
@@ -131,6 +136,7 @@ const Interactor = {
       return null;
     } catch (error) {
       Logger.log(`❌ Error determining next image: ${error.toString()}`);
+      NotificationService.imageSearchFailed(error.toString());
       return null;
     }
   },
@@ -164,6 +170,7 @@ const Interactor = {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_IMAGE_ANALYSIS);
       if (!sheet) {
         Logger.log(`❌ Cannot get status - sheet not found: ${SHEET_IMAGE_ANALYSIS}`);
+        NotificationService.sheetNotFound(SHEET_IMAGE_ANALYSIS);
         return null;
       }
 
@@ -190,6 +197,7 @@ const Interactor = {
       return status;
     } catch (error) {
       Logger.log(`❌ Error getting processing status: ${error.toString()}`);
+      NotificationService.imageSearchFailed(error.toString());
       return null;
     }
   },
@@ -203,6 +211,7 @@ const Interactor = {
     const imageData = DriveService.getSpecificImageToAnalyze(imageName);
     if (!imageData) {
       Logger.log(`❌ Failed to get specific image: ${imageName}`);
+      NotificationService.imageDataFailed(imageName);
       return null;
     }
     
@@ -213,26 +222,31 @@ const Interactor = {
    * Controls the devices based on the scheduled time
    */
   controlDevicesBasedOnSchedule: function(hour) {
-    if ([8].includes(hour)) {
-      Logger.log("🟢 At 8:00 AM Activating lights");
-      SinricProService.turnOnLight1();
-      SinricProService.turnOnLight2();
-    }
-    
-    if ([8, 12, 16, 20].includes(hour)) {
-      Logger.log("🟢 At 8:00 AM, 12:00 PM, 4:00 PM and 8:00 PM Activating aerator");
-      SinricProService.turnOnAeration();
-    }
-        
-    if ([9, 13, 17, 21].includes(hour)) {
-      Logger.log("🟢 At 9:00 AM, 1:00 PM, 5:00 PM and 9:00 PM Deactivating aerator");
-      SinricProService.turnOffAeration();
-    }
+    try {
+      if ([8].includes(hour)) {
+        Logger.log("🟢 At 8:00 AM Activating lights");
+        SinricProService.turnOnLight1();
+        SinricProService.turnOnLight2();
+      }
       
-    if ([17].includes(hour)) {
-      Logger.log("🟢 At 5:00 PM Turning off lights");
-      SinricProService.turnOffLight1();
-      SinricProService.turnOffLight2();
+      if ([8, 12, 16, 20].includes(hour)) {
+        Logger.log("🟢 At 8:00 AM, 12:00 PM, 4:00 PM and 8:00 PM Activating aerator");
+        SinricProService.turnOnAeration();
+      }
+          
+      if ([9, 13, 17, 21].includes(hour)) {
+        Logger.log("🟢 At 9:00 AM, 1:00 PM, 5:00 PM and 9:00 PM Deactivating aerator");
+        SinricProService.turnOffAeration();
+      }
+        
+      if ([17].includes(hour)) {
+        Logger.log("🟢 At 5:00 PM Turning off lights");
+        SinricProService.turnOffLight1();
+        SinricProService.turnOffLight2();
+      }
+    } catch (error) {
+      Logger.log(`❌ Error in controlDevicesBasedOnSchedule: ${error.toString()}`);
+      NotificationService.deviceControlFailed(error.toString());
     }
   }
 };
