@@ -112,11 +112,11 @@ const DriveService = {
         }
       }
 
-      if (!documentFile) {
+      /* if (!documentFile) {
         Logger.log(`⚠️ PRD document not found: ${PRD_NAME}`);
         NotificationService.prdNotFound(PRD_NAME);
         return null;
-      }
+      } */
 
       Logger.log(`✅ PRD document found: ${documentFile.getName()}`);
 

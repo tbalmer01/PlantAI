@@ -223,19 +223,19 @@ const Interactor = {
    */
   controlDevicesBasedOnSchedule: function(hour) {
     try {
-      if ([8].includes(hour)) {
-        Logger.log("🟢 At 8:00 AM Activating lights");
+      if ([9].includes(hour)) {
+        Logger.log("🟢 At 9:00 AM Activating lights");
         SinricProService.turnOnLight1();
         SinricProService.turnOnLight2();
       }
       
-      if ([8, 12, 16, 20].includes(hour)) {
-        Logger.log("🟢 At 8:00 AM, 12:00 PM, 4:00 PM and 8:00 PM Activating aerator");
+      if ([9, 12, 16, 20].includes(hour)) {
+        Logger.log("🟢 At 9:00 AM, 12:00 PM, 4:00 PM and 8:00 PM Activating aerator");
         SinricProService.turnOnAeration();
       }
           
-      if ([9, 13, 17, 21].includes(hour)) {
-        Logger.log("🟢 At 9:00 AM, 1:00 PM, 5:00 PM and 9:00 PM Deactivating aerator");
+      if ([10, 13, 17, 21].includes(hour)) {
+        Logger.log("🟢 At 10:00 AM, 1:00 PM, 5:00 PM and 9:00 PM Deactivating aerator");
         SinricProService.turnOffAeration();
       }
         
