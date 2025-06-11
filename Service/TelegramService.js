@@ -8,7 +8,7 @@
 
 const TelegramAuthService = {
   getApiUrl: function (endpoint = 'sendMessage') {
-    return `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${endpoint}`;
+    return `https://api.telegram.org/bot${PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN')}/${endpoint}`;
   },
 };
 
@@ -40,7 +40,7 @@ const TelegramService = {
   sendMessage: function (message) {
     try {
       const payload = {
-        chat_id: TELEGRAM_CHAT_ID,
+        chat_id: PropertiesService.getScriptProperties().getProperty('TELEGRAM_CHAT_ID'),
         text: `📌 New Gemini response:\n\n${message}`,
         parse_mode: 'Markdown',
       };
@@ -227,7 +227,7 @@ ${randomMessage}
   _sendRawMessage: function (message) {
     try {
       const payload = {
-        chat_id: TELEGRAM_CHAT_ID,
+        chat_id: PropertiesService.getScriptProperties().getProperty('TELEGRAM_CHAT_ID'),
         text: message,
         parse_mode: 'Markdown',
       };

@@ -8,7 +8,7 @@ const SinricProService = {
       const authResponse = UrlFetchApp.fetch('https://api.sinric.pro/api/v1/auth', {
         method: 'post',
         headers: {
-          'x-sinric-api-key': SINRIC_API_KEY,
+          'x-sinric-api-key': PropertiesService.getScriptProperties().getProperty('SINRIC_API_KEY'),
           'Content-Type': 'application/json',
         },
         muteHttpExceptions: true,
@@ -125,7 +125,7 @@ const SinricProService = {
       const authResponse = UrlFetchApp.fetch('https://api.sinric.pro/api/v1/auth', {
         method: 'post',
         headers: {
-          'x-sinric-api-key': SINRIC_API_KEY,
+          'x-sinric-api-key': PropertiesService.getScriptProperties().getProperty('SINRIC_API_KEY'),
           'Content-Type': 'application/json',
         },
       });

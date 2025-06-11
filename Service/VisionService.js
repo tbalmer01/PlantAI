@@ -210,7 +210,7 @@ const VisionService = {
       return null;
     }
 
-    const apiUrl = `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`;
+    const apiUrl = `https://vision.googleapis.com/v1/images:annotate?key=${PropertiesService.getScriptProperties().getProperty('VISION_API_KEY')}`;
 
     const requestBody = {
       requests: [
