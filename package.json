@@ -1,5 +1,10 @@
 {
   "devDependencies": {
-    "@google/clasp": "^2.5.0"
+    "@google/clasp": "^2.5.0",
+    "prettier": "^3.1.0"
+  },
+  "scripts": {
+    "format": "prettier --write \"**/*.js\" \"**/*.json\"",
+    "format:check": "prettier --check \"**/*.js\" \"**/*.json\""
   }
 }

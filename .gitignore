@@ -1,36 +1,15 @@
 # 👇 Evita subir la configuración del proyecto CLASP
 .clasp.json
 
-# 👇 Output de compilación si usás TypeScript con rootDir/dist/outDir
-dist/
-out/
-build/
+# Archivos de configuración JS
+env.js
 
-# 👇 Archivos típicos de configuración del sistema/editor
-.DS_Store
-.idea/
-.vscode/
-
-# 👇 Node.js y dependencias locales (si usás npm para testear o compilar)
+# Node.js y dependencias locales
 node_modules/
 package-lock.json
 yarn.lock
 
-# 👇 Archivos temporales
-*.log
-*.tmp
 
-# 👇 Archivos de configuración personal
-.env
-.env.local
-.env.*.local
-
-# 👇 Caché y config de herramientas
-.nyc_output/
-coverage/
-
-# Archivos de configuración JS
-env.js
 
 # Memoria
 Memoria - Contextual_Memory.csv
@@ -40,3 +19,9 @@ Memoria - User_Notifications.csv
 
 EXCELLENCE_ROADMAP.md
 CLAUDE.md
+
+.prettierignore
+.prettierrc
+package.json
+extensions.json
+settings.json
