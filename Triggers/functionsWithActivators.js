@@ -86,11 +86,8 @@ function controlAeration() {
     ? SinricService.turnOnDevice('Water Aerator')
     : SinricService.turnOffDevice('Water Aerator');
 
-  if (result) 
-    Logger.log(`✅ Aireación adjusted correctly`);
-  else 
-    Logger.log(`⚠️ Failed in the function: SinricService.turnOnDevice()`);
-  
+  if (result) Logger.log(`✅ Aireación adjusted correctly`);
+  else Logger.log(`⚠️ Failed in the function: SinricService.turnOnDevice()`);
 
   Logger.log(`✅ Aeration control completed.`);
 }
