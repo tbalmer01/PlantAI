@@ -1,27 +1,27 @@
 # 👇 Evita subir la configuración del proyecto CLASP
 .clasp.json
 
-# Archivos de configuración JS
+# 👇 Archivos de configuración JS
 env.js
 
-# Node.js y dependencias locales
+# 👇 Node.js y dependencias locales
 node_modules/
 package-lock.json
+package.json
 yarn.lock
+.prettierignore
+.prettierrc
+extensions.json
+settings.json
 
-
-
-# Memoria
+# 👇 Memoria
 Memoria - Contextual_Memory.csv
 Memoria - Devices_and_Sensors.csv
 Memoria - Image_Analysis.csv
 Memoria - User_Notifications.csv
 
+# 👇 Documentos
 EXCELLENCE_ROADMAP.md
 CLAUDE.md
 
-.prettierignore
-.prettierrc
-package.json
-extensions.json
-settings.json
+

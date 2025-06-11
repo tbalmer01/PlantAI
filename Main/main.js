@@ -16,31 +16,31 @@ function main() {
   Logger.log(`🟢 SyAIPlan: Running main flow`);
 
   try {
-    // Get current date and hour ===============================================
+    // 📅 Get current date and hour ===============================================
     const currentDate = new Date();
     const hour = currentDate.getHours();
     Logger.log(`🟢 Current date: ${currentDate}`);
 
-    // IOT devices - Control based on schedule ===============================
+    // 📱 IOT DEVICES - Control based on schedule ===============================
     Logger.log('🟢 Controlling devices based on schedule');
     Interactor.controlDevicesBasedOnSchedule(hour);
 
-    // IOT devices - read data ===============================================
+    // 📱 IOT DEVICES - read data ===============================================
     Logger.log('🟢 Getting IOT devices information from SinricPro API');
     const devices = SinricProService.getSinricDevices() || [];
     Logger.log(`🟢 Response from SinricPro API - devices: ${devices}`);
 
+    // 📄 DEVICES - Logging devices information to Sheets =======================
     Logger.log('🟢 Logging devices information to Sheets');
     SpreadsheetService.logDevicesDataSummary(currentDate, devices);
 
-    // PRD - read data ========================================================
+    // 📄 PRD - read data ========================================================
     Logger.log('🟢 Obtaining the Product requirement data');
     const prdReference = DriveService.getProductRequirementDocument();
 
-    // Image detection flow ====================================================
+    // 📷 IMAGE DETECTION FLOW ===================================================
     Logger.log(`🟢 Searching for new image to analyze`);
     const imageFile = Interactor.searchForNewImage();
-
     if (imageFile) {
       Logger.log(`🟢 Image found: ${imageFile.imageName}`);
 
@@ -77,24 +77,12 @@ function main() {
     } else {
       Logger.log('🟢 No new image found to analyze.');
     }
+
     Logger.log(`🏁 Plant analysis cycle completed.`);
   } catch (mainError) {
     Logger.log(`❌ Critical error in main flow: ${mainError.toString()}`);
-    Logger.log(`❌ Error stack: ${mainError.stack}`);
-
-    // Enhanced error notification with context
-    const errorContext = {
-      timestamp: new Date().toISOString(),
-      errorMessage: mainError.toString(),
-      errorStack: mainError.stack,
-      currentHour: new Date().getHours(),
-      phase: 'main_flow',
-    };
-
-    NotificationService.mainFlowFailed(JSON.stringify(errorContext));
-
-    // Don't throw the error - let the system continue in next cycle
+    NotificationService.mainFlowFailed(JSON.stringify(mainError));
     Logger.log(`🔄 Main flow will retry in next scheduled execution`);
-    return false; // Indicate failure but don't crash
+    return false;
   }
 }
