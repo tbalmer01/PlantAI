@@ -226,6 +226,8 @@ const Interactor = {
    */
   controlDevicesBasedOnSchedule: function (hour) {
     try {
+      Logger.log(`⏰ Device schedule check for hour ${hour}:00`);
+      
       if ([INIT_LIGHTING_HOUR].includes(hour)) {
         Logger.log(`🟢 At ${INIT_LIGHTING_HOUR}:00 Activating lights`);
         SinricProService.turnOnLight1();

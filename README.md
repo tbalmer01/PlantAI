@@ -177,7 +177,7 @@ const SHEET_DEVICES_AND_SENSORS = "Devices_and_Sensors";
 const SHEET_IMAGE_ANALYSIS = "Image_Analysis";
 
 // Documents
-const PRD_NAME = "Product Requirement Document.gdoc";
+const PRD_CONTEXT = "Contexto";
 ```
 
 ## 📚 Documentation

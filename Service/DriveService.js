@@ -107,17 +107,17 @@ const DriveService = {
 
       while (filesIterator.hasNext()) {
         const file = filesIterator.next();
-        if (file.getName() === PRD_NAME) {
+        if (file.getName() === PRD_CONTEXT) {
           documentFile = file;
           break;
         }
       }
 
-      /* if (!documentFile) {
-        Logger.log(`⚠️ PRD document not found: ${PRD_NAME}`);
-        NotificationService.prdNotFound(PRD_NAME);
+      if (!documentFile) {
+        Logger.log(`⚠️ PRD document not found: ${PRD_CONTEXT}`);
+        NotificationService.prdNotFound(PRD_CONTEXT);
         return null;
-      } */
+      }
 
       Logger.log(`✅ PRD document found: ${documentFile.getName()}`);
 
