@@ -5,8 +5,6 @@
 // =================================================================================
 // 📡 Categoría Detectores de Datos Ambientales
 
-
-
 function getAndLogEnvironmentData() {
   Logger.log(`📤 Logging environmental data`);
 
@@ -76,7 +74,7 @@ function controlAeration() {
   Logger.log(`📤 Controlling aeration of the plant`);
 
   const now = new Date();
-  const device = SinricService.getDeviceByName("Water Aerator");
+  const device = SinricService.getDeviceByName('Water Aerator');
 
   if (!device) {
     Logger.log(`⚠️ No found the aeration device`);
@@ -85,14 +83,14 @@ function controlAeration() {
 
   const shouldBeOn = now.getHours() % 2 === 0; // Simulación de encendido cada 2 horas
   const result = shouldBeOn
-    ? SinricService.turnOnDevice("Water Aerator")
-    : SinricService.turnOffDevice("Water Aerator");
+    ? SinricService.turnOnDevice('Water Aerator')
+    : SinricService.turnOffDevice('Water Aerator');
 
-  if (result) {
-      Logger.log(`✅ Aireación adjusted correctly`);
-    } else {
+  if (result) 
+    Logger.log(`✅ Aireación adjusted correctly`);
+  else 
     Logger.log(`⚠️ Failed in the function: SinricService.turnOnDevice()`);
-  }
+  
 
   Logger.log(`✅ Aeration control completed.`);
 }

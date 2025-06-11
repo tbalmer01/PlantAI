@@ -9,7 +9,7 @@ const DriveService = {
   /**
    * Get a specific image by name (called by Interactor)
    */
-  getSpecificImageToAnalyze: function(imageName) {
+  getSpecificImageToAnalyze: function (imageName) {
     Logger.log(`📤 Getting specific image: ${imageName}`);
 
     if (!imageName) {
@@ -29,15 +29,17 @@ const DriveService = {
       }
 
       Logger.log(`📤 Found image: ${imageName}, processing...`);
-      
+
       let fileBlob = imageFile.getBlob();
       let mimeType = imageFile.getMimeType();
-      
+
       const maxSizeBytes = MAX_SIZE_MB * 1024 * 1024;
       if (fileBlob.getBytes().length > maxSizeBytes) {
-        Logger.log(`⚠️ Image is too large (${Math.round(fileBlob.getBytes().length / 1024 / 1024 * 100) / 100}MB), converting to JPEG`);
-        fileBlob = fileBlob.getAs("image/jpeg");
-        mimeType = "image/jpeg";
+        Logger.log(
+          `⚠️ Image is too large (${Math.round((fileBlob.getBytes().length / 1024 / 1024) * 100) / 100}MB), converting to JPEG`
+        );
+        fileBlob = fileBlob.getAs('image/jpeg');
+        mimeType = 'image/jpeg';
         Logger.log(`📤 Image converted to JPEG`);
       }
 
@@ -58,9 +60,8 @@ const DriveService = {
       return {
         imageName: imageFile.getName(),
         imageBase64,
-        mimeType
+        mimeType,
       };
-
     } catch (error) {
       Logger.log(`❌ Error processing image ${imageName}: ${error.toString()}`);
       NotificationService.imageProcessingError(imageName, error.message || error.toString());
@@ -71,7 +72,7 @@ const DriveService = {
   /**
    * Find a specific image file by name in the storage folder
    */
-  findImageByName: function(imageName) {
+  findImageByName: function (imageName) {
     try {
       const storageFolder = DriveApp.getFolderById(DRIVE_FOLDER_IMAGES_ID);
       const files = storageFolder.getFiles();
@@ -79,8 +80,8 @@ const DriveService = {
       while (files.hasNext()) {
         const file = files.next();
         const mimeType = file.getMimeType();
-        
-        if (mimeType.startsWith("image/") && file.getName() === imageName) {
+
+        if (mimeType.startsWith('image/') && file.getName() === imageName) {
           return file;
         }
       }
@@ -96,7 +97,7 @@ const DriveService = {
   /**
    * Get PRD content from Drive
    */
-  getProductRequirementDocument: function() {
+  getProductRequirementDocument: function () {
     try {
       const folder = DriveApp.getFolderById(DRIVE_FOLDER_MAIN_ID);
       Logger.log(`📁 Searching for PRD in folder: ${folder.getName()}`);
@@ -130,5 +131,5 @@ const DriveService = {
       NotificationService.prdErrorGetting(error.toString());
       return null;
     }
-  }
+  },
 };

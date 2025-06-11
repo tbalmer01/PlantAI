@@ -2,11 +2,11 @@
 // UTILITY FUNCTIONS
 // =================================================================================
 
-const Utils = { 
+const Utils = {
   /**
    * Safely parses a JSON string
    */
-  safeJsonParse: function(jsonString, defaultValue = null) {
+  safeJsonParse: function (jsonString, defaultValue = null) {
     try {
       return JSON.parse(jsonString);
     } catch (error) {
@@ -18,11 +18,15 @@ const Utils = {
   /**
    * Obtiene timestamp y sus componentes claramente formateados en GMT-3
    */
-  getTime: function() {
+  getTime: function () {
     const now = new Date();
     const hour = now.getHours();
     const minutes = now.getMinutes();
-    const timestamp = Utilities.formatDate(now, "America/Argentina/Buenos_Aires", "yyyy-MM-dd HH:mm:ss");
+    const timestamp = Utilities.formatDate(
+      now,
+      'America/Argentina/Buenos_Aires',
+      'yyyy-MM-dd HH:mm:ss'
+    );
 
     return {
       currentDate: now,
@@ -31,6 +35,4 @@ const Utils = {
       timestamp,
     };
   },
-
-
 };
