@@ -31,3 +31,12 @@ coverage/
 
 # Archivos de configuración JS
 env.js
+
+# Memoria
+Memoria - Contextual_Memory.csv
+Memoria - Devices_and_Sensors.csv
+Memoria - Image_Analysis.csv
+Memoria - User_Notifications.csv
+
+EXCELLENCE_ROADMAP.md
+CLAUDE.md
