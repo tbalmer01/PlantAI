@@ -9,6 +9,51 @@
  */
 
 // =================================================================================
+// CONFIGURATION VALIDATION
+// =================================================================================
+
+/**
+ * Validates critical system configuration before main execution
+ */
+function validateConfiguration() {
+  try {
+    // Check critical constants
+    const requiredConstants = [
+      'INIT_LIGHTING_HOUR', 'END_LIGHTING_HOUR', 'ON_STATE', 'OFF_STATE',
+      'SHEET_DEVICES_AND_SENSORS', 'SHEET_IMAGE_ANALYSIS',
+      'DRIVE_FOLDER_IMAGES_ID', 'GEMINI_MODEL_NAME'
+    ];
+    
+    for (const constant of requiredConstants) {
+      if (typeof window[constant] === 'undefined' && typeof global[constant] === 'undefined') {
+        Logger.log(`❌ Missing required constant: ${constant}`);
+        return false;
+      }
+    }
+    
+    // Validate lighting schedule
+    if (INIT_LIGHTING_HOUR >= END_LIGHTING_HOUR) {
+      Logger.log(`❌ Invalid lighting schedule: INIT_LIGHTING_HOUR (${INIT_LIGHTING_HOUR}) must be less than END_LIGHTING_HOUR (${END_LIGHTING_HOUR})`);
+      return false;
+    }
+    
+    // Check if it's a valid hour range
+    if (INIT_LIGHTING_HOUR < 0 || INIT_LIGHTING_HOUR > 23 || END_LIGHTING_HOUR < 0 || END_LIGHTING_HOUR > 23) {
+      Logger.log(`❌ Invalid hour values: INIT_LIGHTING_HOUR=${INIT_LIGHTING_HOUR}, END_LIGHTING_HOUR=${END_LIGHTING_HOUR}`);
+      return false;
+    }
+    
+    Logger.log(`✅ Configuration validation passed`);
+    Logger.log(`✅ Lighting schedule: ${INIT_LIGHTING_HOUR}:00 - ${END_LIGHTING_HOUR}:00`);
+    return true;
+    
+  } catch (error) {
+    Logger.log(`❌ Error during configuration validation: ${error.toString()}`);
+    return false;
+  }
+}
+
+// =================================================================================
 // MAIN EXECUTION
 // =================================================================================
 
@@ -16,6 +61,13 @@ function main() {
   Logger.log(`🟢 SyAIPlan: Running main flow`);
 
   try {
+    // Configuration validation ===============================================
+    Logger.log(`🔍 Validating system configuration`);
+    if (!validateConfiguration()) {
+      Logger.log(`❌ Configuration validation failed - aborting main flow`);
+      return false;
+    }
+    
     // Get current date and hour ===============================================
     const currentDate = new Date();
     const hour = currentDate.getHours();
@@ -79,7 +131,22 @@ function main() {
     Logger.log(`🏁 Plant analysis cycle completed.`);
 
   } catch (mainError) {
-    NotificationService.mainFlowFailed(mainError.toString());
-    throw mainError;
+    Logger.log(`❌ Critical error in main flow: ${mainError.toString()}`);
+    Logger.log(`❌ Error stack: ${mainError.stack}`);
+    
+    // Enhanced error notification with context
+    const errorContext = {
+      timestamp: new Date().toISOString(),
+      errorMessage: mainError.toString(),
+      errorStack: mainError.stack,
+      currentHour: new Date().getHours(),
+      phase: 'main_flow'
+    };
+    
+    NotificationService.mainFlowFailed(JSON.stringify(errorContext));
+    
+    // Don't throw the error - let the system continue in next cycle
+    Logger.log(`🔄 Main flow will retry in next scheduled execution`);
+    return false; // Indicate failure but don't crash
   }
 }
