@@ -6,7 +6,7 @@
  * Service for Google Gemini API operations
  */
 const GeminiService = {
-  plantAnalysisByImage: function(currentDate, imageFile, currentDeviceStatus) {
+  plantAnalysisByImage: function(currentDate, imageFile, currentDeviceStatus, prdReference, historicalMemory) {
     const { imageName, imageBase64: base64ImageData, mimeType } = imageFile;
     
     if (!imageName || !base64ImageData || !mimeType) {
@@ -82,10 +82,18 @@ const GeminiService = {
     ---
     (The actual image data will be provided to you separately as part of the multimodal input)`;
 
+    // Prepare historical context summary
+    const historicalContextSummary = historicalMemory && historicalMemory.summary 
+      ? historicalMemory.summary 
+      : "No historical data available for this analysis.";
+    
+    Logger.log(`🧠 Historical context summary (${historicalContextSummary.length} chars): ${historicalContextSummary.substring(0, 200)}...`);
+
     const finalPrompt = basePromptTemplate
       .replace(/\{\{imageName\}\}/g, imageName)
       .replace(/\{\{currentDateISO\}\}/g, currentDate.toISOString())
       .replace(/\{\{currentDeviceStatusJSON\}\}/g, JSON.stringify(currentDeviceStatus))
+      .replace(/\{\{historicalContextSummary\}\}/g, historicalContextSummary)
 
     const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY_2');
     if (!apiKey) {

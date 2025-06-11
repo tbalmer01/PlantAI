@@ -44,12 +44,22 @@ function main() {
     if (imageFile) {
       Logger.log(`🟢 Image found: ${imageFile.imageName}`);
 
-      Logger.log("🟢 Sending data to Gemini API for analysis");
+      // 🧠 MEMORY INTEGRATION: Retrieve historical context for AI analysis
+      Logger.log("🧠 Retrieving historical memory for context-aware analysis");
+      const historicalMemory = MemoryService.retrieveRelevantMemory({
+        currentDate: currentDate,
+        imageName: imageFile.imageName,
+        devices: devices
+      });
+      Logger.log(`🧠 Memory retrieved: ${historicalMemory.entries.length} historical entries found`);
+
+      Logger.log("🟢 Sending data to Gemini API for analysis with historical context");
       const { message_by_image_analysis, summary_for_sheet_by_image_analysis } = GeminiService.plantAnalysisByImage(
         currentDate,
         imageFile,
         devices,
-        prdReference
+        prdReference,
+        historicalMemory // Pass historical context to Gemini
       );
 
       if (message_by_image_analysis) {
