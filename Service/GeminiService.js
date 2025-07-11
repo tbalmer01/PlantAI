@@ -94,11 +94,39 @@ const GeminiService = {
     ---
     (The actual image data will be provided to you separately as part of the multimodal input)`;
 
-    // Prepare historical context summary
-    const historicalContextSummary =
-      historicalMemory && historicalMemory.summary
-        ? historicalMemory.summary
-        : 'No historical data available for this analysis.';
+    // Prepare historical context summary using Mem0
+    let historicalContextSummary = 'No historical data available for this analysis.';
+    
+    try {
+      if (historicalMemory && historicalMemory.summary) {
+        // Use provided memory (primary method)
+        historicalContextSummary = historicalMemory.summary;
+        Logger.log('🧠 Using provided historical memory context');
+      } else if (typeof Mem0Service !== 'undefined') {
+        // Fallback: Use Mem0 to get relevant historical context
+        Logger.log('🧠 No provided memory, retrieving historical context from Mem0...');
+        const currentConditions = {
+          temperature: currentDeviceStatus.temperature,
+          humidity: currentDeviceStatus.humidity,
+          season: this.getCurrentSeason()
+        };
+        
+        const searchQuery = Mem0Service.generateSearchQuery(currentConditions);
+        const memoryResult = Mem0Service.searchMemory(searchQuery, 3);
+        
+        if (memoryResult.success && memoryResult.memories.length > 0) {
+          historicalContextSummary = Mem0Service.createContextSummary(memoryResult.memories);
+          Logger.log(`🧠 ✅ Retrieved ${memoryResult.memories.length} relevant memories from Mem0 as fallback`);
+        } else {
+          Logger.log(`🧠 ⚠️ No relevant memories found in Mem0 fallback: ${memoryResult.error || 'No memories'}`);
+        }
+      } else {
+        Logger.log('🧠 ⚠️ No memory system available for historical context');
+      }
+    } catch (contextError) {
+      Logger.log(`🧠 ❌ Error retrieving historical context: ${contextError.message}`);
+      historicalContextSummary = 'Historical context unavailable due to memory system error.';
+    }
 
     Logger.log(
       `🧠 Historical context summary (${historicalContextSummary.length} chars): ${historicalContextSummary.substring(0, 200)}...`
@@ -312,5 +340,22 @@ const GeminiService = {
     Logger.log(`Extracted ${startMarker} content (first 50 chars): ${content.substring(0, 50)}...`);
 
     return content;
+  },
+
+  /**
+   * Helper function to determine current season based on date
+   * @returns {string} Current season
+   */
+  getCurrentSeason: function() {
+    const now = new Date();
+    const month = now.getMonth() + 1; // getMonth() returns 0-11
+    
+    // Southern Hemisphere seasons (Argentina)
+    if (month >= 12 || month <= 2) return 'summer';
+    if (month >= 3 && month <= 5) return 'autumn';
+    if (month >= 6 && month <= 8) return 'winter';
+    if (month >= 9 && month <= 11) return 'spring';
+    
+    return 'unknown';
   },
 };
